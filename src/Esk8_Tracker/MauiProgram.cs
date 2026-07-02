@@ -42,6 +42,9 @@ namespace Esk8_Tracker
             builder.Services.AddTransient<ViewModels.RideDetailViewModel>();
             builder.Services.AddTransient<Views.RideDetailPage>();
 
+            builder.Services.AddTransient<ViewModels.StatsViewModel>();
+            builder.Services.AddTransient<Views.StatsPage>();
+
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
