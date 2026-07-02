@@ -134,6 +134,40 @@ public class Esk8Database : IRideStore
             .ToListAsync().ConfigureAwait(false);
     }
 
+    // ---- Dashboard ----
+
+    public async Task<DashboardStats> GetDashboardStatsAsync()
+    {
+        var rides = await GetCompletedRidesAsync().ConfigureAwait(false);
+        var names = await GetBoardNamesAsync().ConfigureAwait(false);
+
+        var monthly = rides
+            .GroupBy(r => { var local = r.StartedAt.ToLocalTime(); return (local.Year, local.Month); })
+            .Select(g => new MonthlyStat(g.Key.Year, g.Key.Month,
+                g.Sum(r => r.DistanceMeters), g.Count()))
+            .OrderByDescending(m => (m.Year, m.Month))
+            .ToList();
+
+        var perBoard = rides
+            .GroupBy(r => r.BoardId)
+            .Select(g => new BoardStat(
+                names.TryGetValue(g.Key, out var name) ? name : "(unknown board)",
+                g.Sum(r => r.DistanceMeters), g.Count()))
+            .OrderByDescending(b => b.DistanceMeters)
+            .ToList();
+
+        return new DashboardStats
+        {
+            TotalDistanceMeters = rides.Sum(r => r.DistanceMeters),
+            RideCount = rides.Count,
+            TotalMovingSeconds = rides.Sum(r => r.MovingSeconds),
+            TopSpeedMps = rides.Count > 0 ? rides.Max(r => r.MaxSpeedMps) : 0,
+            LongestRideMeters = rides.Count > 0 ? rides.Max(r => r.DistanceMeters) : 0,
+            Monthly = monthly,
+            PerBoard = perBoard,
+        };
+    }
+
     // ---- Crash recovery ----
 
     public async Task<int> RecoverUnfinishedRidesAsync()
