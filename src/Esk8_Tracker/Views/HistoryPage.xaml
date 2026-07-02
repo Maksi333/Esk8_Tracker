@@ -15,7 +15,7 @@
                 <Border Padding="15,10" Margin="10,5" StrokeThickness="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer
-                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HistoryViewModel}}, Path=OpenRideCommand}"
+                            Command="{Binding Source={RelativeSource Mode=FindAncestorBindingContext, AncestorType={x:Type vm:HistoryViewModel}}, Path=OpenRideCommand}"
                             CommandParameter="{Binding .}" />
                     </Border.GestureRecognizers>
                     <VerticalStackLayout Spacing="4">
@@ -35,6 +35,15 @@
                                 </Label.FormattedText>
                             </Label>
                             <Label Text="{Binding Duration}" FontSize="14" />
+                            <Label FontSize="14">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="avg " />
+                                        <Span Text="{Binding AvgSpeed}" FontAttributes="Bold" />
+                                        <Span Text=" km/h" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
                             <Label FontSize="14">
                                 <Label.FormattedText>
                                     <FormattedString>

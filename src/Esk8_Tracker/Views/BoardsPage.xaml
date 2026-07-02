@@ -23,10 +23,10 @@
                     <Grid ColumnDefinitions="*,Auto,Auto" Padding="0,8" ColumnSpacing="10">
                         <Label Text="{Binding Name}" VerticalOptions="Center" FontSize="18" />
                         <Button Grid.Column="1" Text="Rename"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BoardsViewModel}}, Path=RenameBoardCommand}"
+                                Command="{Binding Source={RelativeSource Mode=FindAncestorBindingContext, AncestorType={x:Type vm:BoardsViewModel}}, Path=RenameBoardCommand}"
                                 CommandParameter="{Binding .}" />
                         <Button Grid.Column="2" Text="Delete"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BoardsViewModel}}, Path=ArchiveBoardCommand}"
+                                Command="{Binding Source={RelativeSource Mode=FindAncestorBindingContext, AncestorType={x:Type vm:BoardsViewModel}}, Path=ArchiveBoardCommand}"
                                 CommandParameter="{Binding .}" />
                     </Grid>
                 </DataTemplate>
