@@ -40,7 +40,8 @@ MAUI Shell with four bottom tabs:
 1. **Ride** — live map (Mapsui, OpenStreetMap tiles) filling most of the screen, position
    centered, route polyline drawn as it grows. Below the map: current speed (large),
    distance, duration, and a GPS-signal indicator. Buttons: Start / Pause / Stop.
-   A board picker is shown before start, defaulting to the last-used board.
+   A board picker is shown before start, defaulting to the last-used board (remembered
+   in app preferences).
 2. **History** — rides newest-first: date, board name, distance, duration, avg/top speed.
    Tap → ride detail page: full route on a map + the ride's stats.
 3. **Stats** — all-time totals (distance, ride count, total riding time), records
@@ -54,7 +55,9 @@ MAUI Shell with four bottom tabs:
   "Recording ride…" notification. Declares `FOREGROUND_SERVICE_LOCATION`
   (required on Android 14+) and requests fused/GPS location updates at ~1 s intervals.
 - **RideRecorder** (shared, platform-agnostic singleton, DI-registered) owns all logic:
-  - State machine: `Idle → Recording ⇄ Paused → Idle` (Stop finalizes).
+  - State machine: `Idle → Recording ⇄ Paused → Idle` (Stop finalizes). While Paused,
+    incoming fixes are discarded — no points stored, no distance or moving time
+    accumulated — but the service and notification stay alive.
   - Accumulates track points; computes distance (haversine), current speed
     (GPS-provided speed, falling back to position delta), average speed over moving
     time, top speed, and moving time (time while speed > 1 km/h).
@@ -79,7 +82,13 @@ MAUI Shell with four bottom tabs:
 - **TrackPoint:** `Id`, `RideId`, `Timestamp`, `Latitude`, `Longitude`, `SpeedMps`,
   `AccuracyMeters`, `AltitudeMeters` (stored for future use, unused in v1 UI).
 
-Dashboard numbers are computed with queries over `Ride` — no derived data is stored twice.
+Per-ride summary fields (`DistanceMeters`, `MovingSeconds`, `AvgSpeedMps`, `MaxSpeedMps`)
+are computed once when the ride is finalized. Dashboard aggregates (totals, records,
+monthly and per-board breakdowns) are computed with queries over `Ride` at read time —
+never stored.
+
+"Duration" shown anywhere in the UI means moving time (`MovingSeconds`); wall-clock
+elapsed time is derivable from `StartedAt`/`EndedAt` but not displayed in v1.
 
 ## Tech stack
 
