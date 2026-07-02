@@ -72,6 +72,14 @@
 		<PackageReference Include="Mapsui.Maui" Version="5.1.0" />
 	</ItemGroup>
 
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+		<!-- bundle_green's android native lib (2.1.11) carries the NU1903 advisory and
+		     has no patched 2.x/3.x release; the patched generic SQLitePCLRaw.lib.e_sqlite3
+		     3.50.3 (referenced by Core) already ships the android natives. Exclude the
+		     superseded package so only the patched libe_sqlite3.so lands in the APK. -->
+		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.11" ExcludeAssets="all" NoWarn="NU1903" />
+	</ItemGroup>
+
 	<ItemGroup>
 	  <ProjectReference Include="..\Esk8_Tracker.Core\Esk8_Tracker.Core.csproj" />
 	</ItemGroup>
