@@ -1,3 +1,9 @@
 <Solution>
-  <Project Path="Esk8_Tracker.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/Esk8_Tracker.Core/Esk8_Tracker.Core.csproj" />
+    <Project Path="src/Esk8_Tracker/Esk8_Tracker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Esk8_Tracker.Core.Tests/Esk8_Tracker.Core.Tests.csproj" />
+  </Folder>
 </Solution>
