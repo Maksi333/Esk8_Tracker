@@ -31,5 +31,6 @@ public class FormatTests
         Assert.Equal("0:05:30", Format.Duration(330));
         Assert.Equal("1:00:00", Format.Duration(3600));
         Assert.Equal("0:00:00", Format.Duration(0));
+        Assert.Equal("30:15:05", Format.Duration(108905)); // > 24 h must not wrap
     }
 }
