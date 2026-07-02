@@ -13,9 +13,16 @@ public class FakeRideStore : IRideStore
 
     public Task<int> CreateRideAsync(int boardId, DateTime startedAtUtc) => Task.FromResult(NextRideId);
 
+    public bool FailNextSave;
+
     public Task SavePointsAsync(IReadOnlyList<TrackPoint> points)
     {
         SaveCalls++;
+        if (FailNextSave)
+        {
+            FailNextSave = false;
+            throw new InvalidOperationException("simulated save failure");
+        }
         SavedPoints.AddRange(points);
         return Task.CompletedTask;
     }
@@ -212,5 +219,50 @@ public class RideRecorderTests
         Assert.Empty(_recorder.RoutePoints);
         Assert.Equal(0, _recorder.CurrentStats.DistanceMeters);
         Assert.Equal(43, _recorder.ActiveRideId);
+    }
+
+    [Fact]
+    public async Task FlushFailure_KeepsPointsAndRetriesNextFlush()
+    {
+        await _recorder.StartAsync(7, T0);
+        _store.FailNextSave = true;
+
+        // 10th point trips the count trigger; the save fails but must not throw here.
+        for (var i = 0; i < 10; i++)
+            await _recorder.OnFixAsync(Fix(55 + i * 0.00001, 12, i, speed: 3));
+
+        Assert.Equal(1, _store.SaveCalls);
+        Assert.Empty(_store.SavedPoints);
+        Assert.Equal(RecorderState.Recording, _recorder.State);
+
+        // Next fix retriggers the count flush (11 buffered >= 10): nothing lost.
+        await _recorder.OnFixAsync(Fix(55.0001, 12, 10, speed: 3));
+
+        Assert.Equal(2, _store.SaveCalls);
+        Assert.Equal(11, _store.SavedPoints.Count);
+        Assert.Equal(T0, _store.SavedPoints[0].Timestamp);
+        Assert.Equal(T0.AddSeconds(10), _store.SavedPoints[^1].Timestamp);
+    }
+
+    [Fact]
+    public async Task StopAsync_PropagatesStoreFailure_AndStaysActive()
+    {
+        await _recorder.StartAsync(7, T0);
+        await _recorder.OnFixAsync(Fix(55, 12, 0, speed: 3));
+        await _recorder.OnFixAsync(Fix(55.0001, 12, 2, speed: 3));
+
+        _store.FailNextSave = true;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _recorder.StopAsync(T0.AddSeconds(30)));
+
+        Assert.Equal(RecorderState.Recording, _recorder.State);
+        Assert.Equal(42, _recorder.ActiveRideId);
+        Assert.Null(_store.Finalized);
+
+        // Store healthy again: retrying Stop succeeds with all points intact.
+        await _recorder.StopAsync(T0.AddSeconds(31));
+
+        Assert.Equal(RecorderState.Idle, _recorder.State);
+        Assert.Equal(2, _store.SavedPoints.Count);
+        Assert.NotNull(_store.Finalized);
     }
 }

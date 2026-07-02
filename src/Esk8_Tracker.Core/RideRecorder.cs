@@ -52,7 +52,7 @@ public class RideRecorder(IRideStore store)
         _route.Clear();
         _lastFlushUtc = null;
 
-        ActiveRideId = await store.CreateRideAsync(boardId, nowUtc).ConfigureAwait(false);
+        ActiveRideId = await store.CreateRideAsync(boardId, nowUtc);
         RideStartedUtc = nowUtc;
         State = RecorderState.Recording;
         StateChanged?.Invoke();
@@ -80,10 +80,11 @@ public class RideRecorder(IRideStore store)
         if (State == RecorderState.Idle)
             throw new InvalidOperationException("No active ride to stop.");
 
+        // Failures here propagate loudly and leave the ride active so Stop can be retried.
         var rideId = ActiveRideId!.Value;
-        await FlushAsync().ConfigureAwait(false);
+        await FlushAsync();
         await store.FinalizeRideAsync(rideId, _acc.DistanceMeters, _acc.MovingSeconds,
-            _acc.AvgSpeedMps, _acc.MaxSpeedMps, nowUtc, wasRecovered: false).ConfigureAwait(false);
+            _acc.AvgSpeedMps, _acc.MaxSpeedMps, nowUtc, wasRecovered: false);
 
         State = RecorderState.Idle;
         ActiveRideId = null;
@@ -120,7 +121,16 @@ public class RideRecorder(IRideStore store)
         if (due)
         {
             _lastFlushUtc = fix.TimestampUtc;
-            await FlushAsync().ConfigureAwait(false);
+            try
+            {
+                await FlushAsync();
+            }
+            catch (Exception ex)
+            {
+                // Transient store failure must not kill recording. FlushAsync kept the
+                // points in the buffer, so the count trigger fires again on the next fix.
+                System.Diagnostics.Debug.WriteLine($"Point flush failed; will retry: {ex}");
+            }
         }
     }
 
@@ -136,6 +146,16 @@ public class RideRecorder(IRideStore store)
         if (_buffer.Count == 0) return;
         var batch = _buffer.ToList();
         _buffer.Clear();
-        await store.SavePointsAsync(batch).ConfigureAwait(false);
+        try
+        {
+            await store.SavePointsAsync(batch);
+        }
+        catch
+        {
+            // Crash safety: a failed save must not lose points. Put them back
+            // (in front — new fixes may have arrived) for the next attempt.
+            _buffer.InsertRange(0, batch);
+            throw;
+        }
     }
 }
