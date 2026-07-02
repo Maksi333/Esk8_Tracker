@@ -24,6 +24,9 @@ namespace Esk8_Tracker
             builder.Services.AddSingleton<IRideStore>(sp => sp.GetRequiredService<Esk8Database>());
             builder.Services.AddSingleton<RideRecorder>();
 
+            builder.Services.AddTransient<ViewModels.BoardsViewModel>();
+            builder.Services.AddTransient<Views.BoardsPage>();
+
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
