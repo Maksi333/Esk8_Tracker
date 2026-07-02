@@ -30,7 +30,12 @@ public class RideRecordingService : Service, ILocationListener
         CreateNotificationChannel();
         // Android 14+: throws unless FOREGROUND_SERVICE_LOCATION is declared and
         // fine/coarse location was granted BEFORE this call (Task 9 guarantees it).
-        StartForeground(NotificationId, BuildNotification(), ForegroundService.TypeLocation);
+        // The typed overload exists only on API 29+; older versions take the
+        // service type solely from the manifest.
+        if (OperatingSystem.IsAndroidVersionAtLeast(29))
+            StartForeground(NotificationId, BuildNotification(), ForegroundService.TypeLocation);
+        else
+            StartForeground(NotificationId, BuildNotification());
         StartLocationUpdates();
 
         // NotSticky: if the process dies mid-ride, recorder state is gone anyway;
