@@ -1,7 +1,60 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Esk8_Tracker.ViewModels"
              x:Class="Esk8_Tracker.Views.RidePage"
+             x:DataType="vm:RideViewModel"
              Title="Ride">
-    <Label Text="Ride" HorizontalOptions="Center" VerticalOptions="Center" />
+    <Grid RowDefinitions="*,Auto" >
+
+        <Grid Grid.Row="0">
+            <ContentView x:Name="MapHolder" />
+            <Label Text="GPS signal lost"
+                   IsVisible="{Binding IsGpsLost}"
+                   BackgroundColor="#CCB00020" TextColor="White"
+                   Padding="12,6" HorizontalOptions="Center" VerticalOptions="Start"
+                   Margin="0,10,0,0" />
+        </Grid>
+
+        <VerticalStackLayout Grid.Row="1" Padding="15,10" Spacing="10">
+
+            <Label Text="Recording is not supported on this platform — use the Android app."
+                   IsVisible="{Binding IsSupported, Converter={StaticResource InvertedBoolConverter}}"
+                   TextColor="OrangeRed" HorizontalOptions="Center" />
+
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">
+                <Label Text="{Binding SpeedDisplay}" FontSize="64" FontAttributes="Bold" />
+                <Label Text="km/h" FontSize="20" VerticalOptions="End" Margin="0,0,0,12" />
+            </HorizontalStackLayout>
+
+            <Grid ColumnDefinitions="*,*,*" >
+                <VerticalStackLayout HorizontalOptions="Center">
+                    <Label Text="{Binding DistanceDisplay}" FontSize="22" HorizontalOptions="Center" />
+                    <Label Text="km" FontSize="12" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                    <Label Text="{Binding DurationDisplay}" FontSize="22" HorizontalOptions="Center" />
+                    <Label Text="moving" FontSize="12" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                    <Label Text="{Binding MaxDisplay}" FontSize="22" HorizontalOptions="Center" />
+                    <Label Text="max km/h" FontSize="12" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <Picker Title="Board"
+                    ItemsSource="{Binding Boards}" ItemDisplayBinding="{Binding Name}"
+                    SelectedItem="{Binding SelectedBoard}"
+                    IsEnabled="{Binding IsIdle}" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Text="Start ride" Command="{Binding StartCommand}"
+                        IsVisible="{Binding IsIdle}" Grid.ColumnSpan="2" />
+                <Button Text="{Binding PauseResumeText}" Command="{Binding PauseResumeCommand}"
+                        IsVisible="{Binding IsActive}" />
+                <Button Grid.Column="1" Text="Stop" Command="{Binding StopCommand}"
+                        IsVisible="{Binding IsActive}" BackgroundColor="#B00020" TextColor="White" />
+            </Grid>
+        </VerticalStackLayout>
+    </Grid>
 </ContentPage>
