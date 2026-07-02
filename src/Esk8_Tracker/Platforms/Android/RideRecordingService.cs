@@ -67,14 +67,17 @@ public class RideRecordingService : Service, ILocationListener
         var pending = PendingIntent.GetActivity(this, 0, openApp,
             PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
 
-        return new NotificationCompat.Builder(this, ChannelId)
-            .SetContentTitle("Recording ride")
-            .SetContentText("Esk8 Tracker is recording your ride")
-            .SetSmallIcon(Resource.Mipmap.appicon)
-            .SetOngoing(true)
-            .SetContentIntent(pending)
-            .SetForegroundServiceBehavior(NotificationCompat.ForegroundServiceImmediate)
-            .Build();
+        // The AndroidX binding marks the builder's fluent returns as nullable even
+        // though they always return the builder itself; build stepwise to avoid
+        // false-positive CS8602/CS8603 on the chain.
+        var builder = new NotificationCompat.Builder(this, ChannelId);
+        builder.SetContentTitle("Recording ride");
+        builder.SetContentText("Esk8 Tracker is recording your ride");
+        builder.SetSmallIcon(Resource.Mipmap.appicon);
+        builder.SetOngoing(true);
+        builder.SetContentIntent(pending);
+        builder.SetForegroundServiceBehavior(NotificationCompat.ForegroundServiceImmediate);
+        return builder.Build()!;
     }
 
     private void StartLocationUpdates()
