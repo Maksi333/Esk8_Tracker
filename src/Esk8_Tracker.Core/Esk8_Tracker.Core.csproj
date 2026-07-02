@@ -10,6 +10,9 @@
   <ItemGroup>
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
+    <!-- Overrides the bundle's 2.1.11 native lib, which carries a known
+         vulnerability advisory (GHSA-2m69-gcr7-jv3q / NU1903). -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.50.3" />
   </ItemGroup>
 
 </Project>
