@@ -26,19 +26,26 @@ public partial class RidePage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.OnAppearingAsync();
+        try
+        {
+            await _viewModel.OnAppearingAsync();
 
-        // Returning to the tab mid-ride: rebuild the drawn route from the recorder.
-        if (_recorder.State != RecorderState.Idle && _recorder.RoutePoints.Count > 0)
-        {
-            _rideMap.SetRoute(_recorder.RoutePoints);
-            var (lat, lon) = _recorder.RoutePoints[^1];
-            _rideMap.UpdatePosition(lat, lon);
-            _mapCentered = true;
+            // Returning to the tab mid-ride: rebuild the drawn route from the recorder.
+            if (_recorder.State != RecorderState.Idle && _recorder.RoutePoints.Count > 0)
+            {
+                _rideMap.SetRoute(_recorder.RoutePoints);
+                var (lat, lon) = _recorder.RoutePoints[^1];
+                _rideMap.UpdatePosition(lat, lon);
+                _mapCentered = true;
+            }
+            else if (!_mapCentered)
+            {
+                await CenterOnLastKnownPositionAsync();
+            }
         }
-        else if (!_mapCentered)
+        catch (Exception ex)
         {
-            await CenterOnLastKnownPositionAsync();
+            System.Diagnostics.Debug.WriteLine($"RidePage appearing failed: {ex}");
         }
     }
 

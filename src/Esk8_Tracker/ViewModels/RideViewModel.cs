@@ -73,36 +73,51 @@ public partial class RideViewModel : ObservableObject
     [RelayCommand]
     private async Task StartAsync()
     {
-        if (!IsSupported)
+        try
         {
-            await Shell.Current.DisplayAlertAsync("Not supported",
-                "Ride recording only works in the Android app.", "OK");
-            return;
-        }
-        if (SelectedBoard is null)
-        {
-            await Shell.Current.DisplayAlertAsync("No board",
-                "Add a board on the Boards tab before recording a ride.", "OK");
-            return;
-        }
+            if (!IsSupported)
+            {
+                await Shell.Current.DisplayAlertAsync("Not supported",
+                    "Ride recording only works in the Android app.", "OK");
+                return;
+            }
+            if (SelectedBoard is null)
+            {
+                await Shell.Current.DisplayAlertAsync("No board",
+                    "Add a board on the Boards tab before recording a ride.", "OK");
+                return;
+            }
 
-        var location = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-        if (location != PermissionStatus.Granted)
-        {
-            var openSettings = await Shell.Current.DisplayAlertAsync("Location needed",
-                "Esk8 Tracker needs location access to record your ride. " +
-                "Grant it in system settings.", "Open settings", "Cancel");
-            if (openSettings) AppInfo.ShowSettingsUI();
-            return;
-        }
-        // Optional on Android 13+: only affects whether the recording
-        // notification is visible in the drawer. Must NOT block recording.
-        await Permissions.RequestAsync<Permissions.PostNotifications>();
+            var location = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            if (location != PermissionStatus.Granted)
+            {
+                var openSettings = await Shell.Current.DisplayAlertAsync("Location needed",
+                    "Esk8 Tracker needs location access to record your ride. " +
+                    "Grant it in system settings.", "Open settings", "Cancel");
+                if (openSettings) AppInfo.ShowSettingsUI();
+                return;
+            }
+            if (!_controller.HasPreciseLocation)
+            {
+                var openSettings = await Shell.Current.DisplayAlertAsync("Precise location needed",
+                    "Ride recording needs precise location. Enable \"Use precise location\" for Esk8 Tracker in system settings.",
+                    "Open settings", "Cancel");
+                if (openSettings) AppInfo.ShowSettingsUI();
+                return;
+            }
+            // Optional on Android 13+: only affects whether the recording
+            // notification is visible in the drawer. Must NOT block recording.
+            await Permissions.RequestAsync<Permissions.PostNotifications>();
 
-        Preferences.Set(LastBoardKey, SelectedBoard.Id);
-        await _recorder.StartAsync(SelectedBoard.Id, DateTime.UtcNow);
-        _controller.StartLocationService(SelectedBoard.Id);
-        StartTimer();
+            Preferences.Set(LastBoardKey, SelectedBoard.Id);
+            await _recorder.StartAsync(SelectedBoard.Id, DateTime.UtcNow);
+            _controller.StartLocationService(SelectedBoard.Id);
+            StartTimer();
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Something went wrong", ex.Message, "OK");
+        }
     }
 
     [RelayCommand]
@@ -119,11 +134,18 @@ public partial class RideViewModel : ObservableObject
             "Finish and save this ride?", "Stop", "Keep riding");
         if (!confirmed) return;
 
-        _controller.StopLocationService();
-        await _recorder.StopAsync(DateTime.UtcNow);
-        StopTimer();
-        SpeedDisplay = "0.0";
-        IsGpsLost = false;
+        try
+        {
+            _controller.StopLocationService();
+            await _recorder.StopAsync(DateTime.UtcNow);
+            StopTimer();
+            SpeedDisplay = "0.0";
+            IsGpsLost = false;
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Something went wrong", ex.Message, "OK");
+        }
     }
 
     private void OnStatsUpdated(RideLiveStats stats) =>

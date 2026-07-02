@@ -9,6 +9,9 @@ public interface IRideRecordingController
 {
     bool IsSupported { get; }
 
+    /// <summary>Android 12+ users can grant approximate-only location; the GPS provider needs precise.</summary>
+    bool HasPreciseLocation { get; }
+
     void StartLocationService(int boardId);
 
     void StopLocationService();
@@ -17,6 +20,8 @@ public interface IRideRecordingController
 public class UnsupportedRideRecordingController : IRideRecordingController
 {
     public bool IsSupported => false;
+
+    public bool HasPreciseLocation => false;
 
     public void StartLocationService(int boardId) { }
 

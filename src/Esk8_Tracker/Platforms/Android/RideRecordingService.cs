@@ -36,7 +36,18 @@ public class RideRecordingService : Service, ILocationListener
             StartForeground(NotificationId, BuildNotification(), ForegroundService.TypeLocation);
         else
             StartForeground(NotificationId, BuildNotification());
-        StartLocationUpdates();
+        try
+        {
+            StartLocationUpdates();
+        }
+        catch (Java.Lang.SecurityException ex)
+        {
+            // Permission revoked between the VM's check and service start.
+            System.Diagnostics.Debug.WriteLine($"Location updates denied; stopping service: {ex}");
+            StopForeground(StopForegroundFlags.Remove);
+            StopSelf();
+            return StartCommandResult.NotSticky;
+        }
 
         // NotSticky: if the process dies mid-ride, recorder state is gone anyway;
         // startup crash recovery (App.OnStart) finalizes the ride from saved points.

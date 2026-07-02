@@ -19,8 +19,15 @@ public partial class RideDetailPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.LoadAsync();
-        _rideMap.SetRoute(_viewModel.RoutePoints);
-        _rideMap.ZoomToRoute();
+        try
+        {
+            await _viewModel.LoadAsync();
+            _rideMap.SetRoute(_viewModel.RoutePoints);
+            _rideMap.ZoomToRoute();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RideDetailPage appearing failed: {ex}");
+        }
     }
 }

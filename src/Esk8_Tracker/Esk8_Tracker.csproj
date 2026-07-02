@@ -28,10 +28,10 @@
 		<MauiXamlInflator>SourceGen</MauiXamlInflator>
 
 		<!-- Display name -->
-		<ApplicationTitle>Esk8_Tracker</ApplicationTitle>
+		<ApplicationTitle>Esk8 Tracker</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.esk8_tracker</ApplicationId>
+		<ApplicationId>com.simonandersen.esk8tracker</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>

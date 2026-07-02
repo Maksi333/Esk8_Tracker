@@ -1,3 +1,4 @@
+using Esk8_Tracker.Core;
 using Esk8_Tracker.Core.Data;
 
 namespace Esk8_Tracker
@@ -5,11 +6,13 @@ namespace Esk8_Tracker
     public partial class App : Application
     {
         private readonly Esk8Database _database;
+        private readonly RideRecorder _recorder;
 
-        public App(Esk8Database database)
+        public App(Esk8Database database, RideRecorder recorder)
         {
             InitializeComponent();
             _database = database;
+            _recorder = recorder;
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
@@ -27,6 +30,7 @@ namespace Esk8_Tracker
         {
             try
             {
+                if (_recorder.State != RecorderState.Idle) return; // never touch the live ride
                 await _database.RecoverUnfinishedRidesAsync();
             }
             catch (Exception ex)

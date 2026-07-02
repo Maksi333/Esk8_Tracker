@@ -7,6 +7,12 @@ public class AndroidRideRecordingController : IRideRecordingController
 {
     public bool IsSupported => true;
 
+    public bool HasPreciseLocation =>
+        AndroidX.Core.Content.ContextCompat.CheckSelfPermission(
+            Android.App.Application.Context,
+            Android.Manifest.Permission.AccessFineLocation)
+        == Android.Content.PM.Permission.Granted;
+
     public void StartLocationService(int boardId)
     {
         var context = Android.App.Application.Context;
