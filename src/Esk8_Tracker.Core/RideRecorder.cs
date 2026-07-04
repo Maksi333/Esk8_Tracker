@@ -41,6 +41,10 @@ public class RideRecorder(IRideStore store)
     public event Action<RideLiveStats>? StatsUpdated;
     public event Action<GpsFix>? FixAccepted;
 
+    /// <summary>Every fix as delivered, before filtering, in Recording *and* Paused —
+    /// the auto-pause monitor needs to see movement while frozen.</summary>
+    public event Action<GpsFix>? RawFix;
+
     public async Task<int> StartAsync(int boardId, DateTime nowUtc)
     {
         if (State != RecorderState.Idle)
@@ -92,8 +96,39 @@ public class RideRecorder(IRideStore store)
         StateChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Continue an interrupted ride found on relaunch ("Resume unsaved ride?").
+    /// Rebuilds live stats from the persisted points and keeps appending to the same ride.
+    /// </summary>
+    public void ResumeRecovered(Ride unfinished, IReadOnlyList<TrackPoint> points)
+    {
+        if (State != RecorderState.Idle)
+            throw new InvalidOperationException($"Cannot resume a recovered ride while {State}.");
+
+        _acc = new StatsAccumulator();
+        _buffer.Clear();
+        _route.Clear();
+        _lastFlushUtc = null;
+        foreach (var p in points)
+        {
+            _acc.Add(new GpsFix(p.Timestamp, p.Latitude, p.Longitude,
+                p.SpeedMps, p.AccuracyMeters, p.AltitudeMeters));
+            _route.Add((p.Latitude, p.Longitude));
+        }
+        // The gap between the last stored point and "now" exceeds GapSeconds, so the
+        // accumulator restarts its segment on the next fix instead of teleporting.
+        _lastAccepted = null;
+
+        ActiveRideId = unfinished.Id;
+        RideStartedUtc = unfinished.StartedAt;
+        State = RecorderState.Recording;
+        StateChanged?.Invoke();
+        StatsUpdated?.Invoke(CurrentStats);
+    }
+
     public async Task OnFixAsync(GpsFix fix)
     {
+        if (State != RecorderState.Idle) RawFix?.Invoke(fix);
         if (State != RecorderState.Recording) return;
         if (!FixFilter.ShouldAccept(_lastAccepted, fix)) return;
 

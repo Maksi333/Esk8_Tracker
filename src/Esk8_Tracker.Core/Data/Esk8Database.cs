@@ -4,17 +4,19 @@ using SQLite;
 namespace Esk8_Tracker.Core.Data;
 
 /// <summary>
-/// Local SQLite persistence. Schema is created lazily on first use;
-/// safe to resolve as a singleton and call from anywhere.
+/// Local SQLite persistence. Schema is created lazily on first use (sqlite-net adds
+/// new columns on model growth); safe to resolve as a singleton and call from anywhere.
 /// </summary>
 public class Esk8Database : IRideStore
 {
     private readonly SQLiteAsyncConnection _connection;
+    private readonly string _dbPath;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _initialized;
 
     public Esk8Database(string dbPath)
     {
+        _dbPath = dbPath;
         _connection = new SQLiteAsyncConnection(dbPath,
             SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache);
     }
@@ -39,6 +41,20 @@ public class Esk8Database : IRideStore
 
     public Task CloseAsync() => _connection.CloseAsync();
 
+    /// <summary>Size of the database file on disk ("Storage used" in Settings).</summary>
+    public long StorageBytes()
+    {
+        try
+        {
+            var info = new FileInfo(_dbPath);
+            return info.Exists ? info.Length : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     // ---- Boards ----
 
     public async Task<List<Board>> GetActiveBoardsAsync()
@@ -46,23 +62,31 @@ public class Esk8Database : IRideStore
         await EnsureInitializedAsync().ConfigureAwait(false);
         return await _connection.Table<Board>()
             .Where(b => !b.IsArchived)
-            .OrderBy(b => b.Name)
+            .OrderBy(b => b.CreatedAt)
             .ToListAsync().ConfigureAwait(false);
     }
 
-    public async Task<Board> AddBoardAsync(string name)
+    public async Task<Board?> GetBoardAsync(int id)
     {
         await EnsureInitializedAsync().ConfigureAwait(false);
-        var board = new Board { Name = name, CreatedAt = DateTime.UtcNow };
-        await _connection.InsertAsync(board).ConfigureAwait(false);
-        return board;
+        return await _connection.Table<Board>()
+            .Where(b => b.Id == id)
+            .FirstOrDefaultAsync().ConfigureAwait(false);
     }
 
-    public async Task RenameBoardAsync(int id, string name)
+    public async Task<Board> SaveBoardAsync(Board board)
     {
         await EnsureInitializedAsync().ConfigureAwait(false);
-        await _connection.ExecuteAsync(
-            "UPDATE Board SET Name = ? WHERE Id = ?", name, id).ConfigureAwait(false);
+        if (board.Id == 0)
+        {
+            board.CreatedAt = DateTime.UtcNow;
+            await _connection.InsertAsync(board).ConfigureAwait(false);
+        }
+        else
+        {
+            await _connection.UpdateAsync(board).ConfigureAwait(false);
+        }
+        return board;
     }
 
     public async Task ArchiveBoardAsync(int id)
@@ -72,11 +96,19 @@ public class Esk8Database : IRideStore
             "UPDATE Board SET IsArchived = 1 WHERE Id = ?", id).ConfigureAwait(false);
     }
 
-    public async Task<Dictionary<int, string>> GetBoardNamesAsync()
+    public async Task<Dictionary<int, Board>> GetBoardsByIdAsync()
     {
         await EnsureInitializedAsync().ConfigureAwait(false);
         var boards = await _connection.Table<Board>().ToListAsync().ConfigureAwait(false);
-        return boards.ToDictionary(b => b.Id, b => b.Name);
+        return boards.ToDictionary(b => b.Id);
+    }
+
+    /// <summary>Total saved distance per board (the per-board odometer in the Garage).</summary>
+    public async Task<Dictionary<int, double>> GetBoardOdometersAsync()
+    {
+        var rides = await GetCompletedRidesAsync().ConfigureAwait(false);
+        return rides.GroupBy(r => r.BoardId)
+            .ToDictionary(g => g.Key, g => g.Sum(r => r.DistanceMeters));
     }
 
     // ---- Rides (IRideStore) ----
@@ -99,11 +131,43 @@ public class Esk8Database : IRideStore
         double avgSpeedMps, double maxSpeedMps, DateTime endedAtUtc, bool wasRecovered)
     {
         await EnsureInitializedAsync().ConfigureAwait(false);
+
+        // Derive elevation gain + start coordinates from the stored track once, at the end.
+        var points = await GetTrackPointsAsync(rideId).ConfigureAwait(false);
+        var gain = RideAnalysis.ElevationGainMeters(points);
+        double? startLat = points.Count > 0 ? points[0].Latitude : null;
+        double? startLon = points.Count > 0 ? points[0].Longitude : null;
+
         await _connection.ExecuteAsync(
             "UPDATE Ride SET DistanceMeters = ?, MovingSeconds = ?, AvgSpeedMps = ?, " +
-            "MaxSpeedMps = ?, EndedAt = ?, WasRecovered = ? WHERE Id = ?",
+            "MaxSpeedMps = ?, EndedAt = ?, WasRecovered = ?, ElevationGainMeters = ?, " +
+            "StartLatitude = ?, StartLongitude = ? WHERE Id = ?",
             distanceMeters, movingSeconds, avgSpeedMps, maxSpeedMps,
-            endedAtUtc, wasRecovered, rideId).ConfigureAwait(false);
+            endedAtUtc, wasRecovered, gain, startLat, startLon, rideId).ConfigureAwait(false);
+    }
+
+    public async Task UpdateRideMetaAsync(int rideId, string name, string tags, string notes)
+    {
+        await EnsureInitializedAsync().ConfigureAwait(false);
+        await _connection.ExecuteAsync(
+            "UPDATE Ride SET Name = ?, Tags = ?, Notes = ? WHERE Id = ?",
+            name, tags, notes, rideId).ConfigureAwait(false);
+    }
+
+    public async Task UpdateRidePhotosAsync(int rideId, string photosJson)
+    {
+        await EnsureInitializedAsync().ConfigureAwait(false);
+        await _connection.ExecuteAsync(
+            "UPDATE Ride SET PhotosJson = ? WHERE Id = ?", photosJson, rideId).ConfigureAwait(false);
+    }
+
+    public async Task DeleteRideAsync(int rideId)
+    {
+        await EnsureInitializedAsync().ConfigureAwait(false);
+        await _connection.ExecuteAsync(
+            "DELETE FROM TrackPoint WHERE RideId = ?", rideId).ConfigureAwait(false);
+        await _connection.ExecuteAsync(
+            "DELETE FROM Ride WHERE Id = ?", rideId).ConfigureAwait(false);
     }
 
     // ---- Ride queries ----
@@ -134,70 +198,68 @@ public class Esk8Database : IRideStore
             .ToListAsync().ConfigureAwait(false);
     }
 
-    // ---- Dashboard ----
-
-    public async Task<DashboardStats> GetDashboardStatsAsync()
+    public async Task<List<TrackPoint>> GetAllTrackPointsAsync()
     {
-        var rides = await GetCompletedRidesAsync().ConfigureAwait(false);
-        var names = await GetBoardNamesAsync().ConfigureAwait(false);
-
-        var monthly = rides
-            .GroupBy(r => { var local = r.StartedAt.ToLocalTime(); return (local.Year, local.Month); })
-            .Select(g => new MonthlyStat(g.Key.Year, g.Key.Month,
-                g.Sum(r => r.DistanceMeters), g.Count()))
-            .OrderByDescending(m => (m.Year, m.Month))
-            .ToList();
-
-        var perBoard = rides
-            .GroupBy(r => r.BoardId)
-            .Select(g => new BoardStat(
-                names.TryGetValue(g.Key, out var name) ? name : "(unknown board)",
-                g.Sum(r => r.DistanceMeters), g.Count()))
-            .OrderByDescending(b => b.DistanceMeters)
-            .ToList();
-
-        return new DashboardStats
-        {
-            TotalDistanceMeters = rides.Sum(r => r.DistanceMeters),
-            RideCount = rides.Count,
-            TotalMovingSeconds = rides.Sum(r => r.MovingSeconds),
-            TopSpeedMps = rides.Count > 0 ? rides.Max(r => r.MaxSpeedMps) : 0,
-            LongestRideMeters = rides.Count > 0 ? rides.Max(r => r.DistanceMeters) : 0,
-            Monthly = monthly,
-            PerBoard = perBoard,
-        };
+        await EnsureInitializedAsync().ConfigureAwait(false);
+        return await _connection.Table<TrackPoint>()
+            .OrderBy(p => p.RideId)
+            .ToListAsync().ConfigureAwait(false);
     }
 
     // ---- Crash recovery ----
 
-    public async Task<int> RecoverUnfinishedRidesAsync()
+    /// <summary>
+    /// The interrupted ride to offer in the "Resume unsaved ride?" banner, or null.
+    /// Rides with no stored points are deleted (nothing to recover).
+    /// </summary>
+    public async Task<Ride?> GetUnfinishedRideAsync()
     {
         await EnsureInitializedAsync().ConfigureAwait(false);
         var unfinished = await _connection.Table<Ride>()
             .Where(r => r.EndedAt == null)
+            .OrderByDescending(r => r.StartedAt)
             .ToListAsync().ConfigureAwait(false);
 
-        var recovered = 0;
+        Ride? keep = null;
         foreach (var ride in unfinished)
         {
-            var points = await GetTrackPointsAsync(ride.Id).ConfigureAwait(false);
-            if (points.Count == 0)
+            var count = await _connection.Table<TrackPoint>()
+                .Where(p => p.RideId == ride.Id)
+                .CountAsync().ConfigureAwait(false);
+            if (count == 0)
             {
                 await _connection.DeleteAsync(ride).ConfigureAwait(false);
-                continue;
             }
+            else if (keep is null)
+            {
+                keep = ride;
+            }
+            else
+            {
+                // Older interrupted ride behind the newest one: finalize it silently.
+                await FinalizeFromPointsAsync(ride).ConfigureAwait(false);
+            }
+        }
+        return keep;
+    }
 
-            var acc = new StatsAccumulator();
-            foreach (var p in points)
-                acc.Add(new GpsFix(p.Timestamp, p.Latitude, p.Longitude,
-                    p.SpeedMps, p.AccuracyMeters, p.AltitudeMeters));
-
-            await FinalizeRideAsync(ride.Id, acc.DistanceMeters, acc.MovingSeconds,
-                acc.AvgSpeedMps, acc.MaxSpeedMps, points[^1].Timestamp,
-                wasRecovered: true).ConfigureAwait(false);
-            recovered++;
+    /// <summary>Finalize an interrupted ride from its stored points (dismissed recovery).</summary>
+    public async Task FinalizeFromPointsAsync(Ride ride)
+    {
+        var points = await GetTrackPointsAsync(ride.Id).ConfigureAwait(false);
+        if (points.Count == 0)
+        {
+            await _connection.DeleteAsync(ride).ConfigureAwait(false);
+            return;
         }
 
-        return recovered;
+        var acc = new StatsAccumulator();
+        foreach (var p in points)
+            acc.Add(new GpsFix(p.Timestamp, p.Latitude, p.Longitude,
+                p.SpeedMps, p.AccuracyMeters, p.AltitudeMeters));
+
+        await FinalizeRideAsync(ride.Id, acc.DistanceMeters, acc.MovingSeconds,
+            acc.AvgSpeedMps, acc.MaxSpeedMps, points[^1].Timestamp,
+            wasRecovered: true).ConfigureAwait(false);
     }
 }

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Esk8_Tracker.ViewModels"
+             xmlns:controls="clr-namespace:Esk8_Tracker.Controls"
+             xmlns:icons="clr-namespace:Esk8_Tracker"
+             x:Class="Esk8_Tracker.Views.StatsSection"
+             x:DataType="vm:StatsViewModel"
+             BackgroundColor="{StaticResource BgBase}">
+    <ScrollView>
+        <VerticalStackLayout Padding="18,16,18,20" Spacing="0">
+            <Label Text="Stats" Style="{StaticResource ScreenTitle}" Margin="0,0,0,16" />
+
+            <!-- lifetime hero -->
+            <Border StrokeShape="RoundRectangle 18" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" Padding="18" Margin="0,0,0,20">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#16202B" Offset="0.0" />
+                        <GradientStop Color="#141A20" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <VerticalStackLayout Spacing="0">
+                    <Label Text="LIFETIME" Style="{StaticResource SectionLabel}" CharacterSpacing="1.4" Margin="0,0,0,8" />
+                    <Label Text="{Binding LifetimeDistance}" FontFamily="ChakraPetchBold" FontSize="40" CharacterSpacing="-0.5" />
+                    <HorizontalStackLayout Spacing="20" Margin="0,12,0,0">
+                        <VerticalStackLayout>
+                            <Label Text="{Binding LifetimeRides}" FontFamily="ChakraPetch" FontSize="18" />
+                            <Label Text="rides" FontSize="11" TextColor="{StaticResource TextTertiary}" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout>
+                            <Label Text="{Binding LifetimeMoving}" FontFamily="ChakraPetch" FontSize="18" />
+                            <Label Text="moving" FontSize="11" TextColor="{StaticResource TextTertiary}" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout>
+                            <Label Text="{Binding LifetimeClimb}" FontFamily="ChakraPetch" FontSize="18" />
+                            <Label Text="climbed" FontSize="11" TextColor="{StaticResource TextTertiary}" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- records -->
+            <Label Text="Records" FontFamily="InterSemiBold" FontSize="13" TextColor="{StaticResource TextSecondary}" Margin="0,0,0,10" />
+            <VerticalStackLayout Spacing="9" Margin="0,0,0,22">
+                <Border Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="14,12">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13">
+                        <Label Text="{x:Static icons:MaterialIcons.Bolt}" FontFamily="MaterialRounded" FontSize="22" TextColor="{Binding RecordTopColor}" VerticalOptions="Center" />
+                        <Label Grid.Column="1" Text="Top speed" FontSize="13.5" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                        <Label Grid.Column="2" Text="{Binding RecordTop}" FontFamily="ChakraPetchSemiBold" FontSize="18" TextColor="{Binding RecordTopColor}" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="14,12">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13">
+                        <Label Text="{x:Static icons:MaterialIcons.Straighten}" FontFamily="MaterialRounded" FontSize="22" TextColor="{Binding RecordLongestColor}" VerticalOptions="Center" />
+                        <Label Grid.Column="1" Text="Longest ride" FontSize="13.5" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                        <Label Grid.Column="2" Text="{Binding RecordLongest}" FontFamily="ChakraPetchSemiBold" FontSize="18" TextColor="{Binding RecordLongestColor}" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="14,12">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13">
+                        <Label Text="{x:Static icons:MaterialIcons.Timer}" FontFamily="MaterialRounded" FontSize="22" TextColor="{Binding RecordSessionColor}" VerticalOptions="Center" />
+                        <Label Grid.Column="1" Text="Longest session" FontSize="13.5" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                        <Label Grid.Column="2" Text="{Binding RecordSession}" FontFamily="ChakraPetchSemiBold" FontSize="18" TextColor="{Binding RecordSessionColor}" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="14,12">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13">
+                        <Label Text="{x:Static icons:MaterialIcons.LocalFireDepartment}" FontFamily="MaterialRounded" FontSize="22" TextColor="{Binding RecordStreakColor}" VerticalOptions="Center" />
+                        <Label Grid.Column="1" Text="Best streak" FontSize="13.5" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                        <Label Grid.Column="2" Text="{Binding RecordStreak}" FontFamily="ChakraPetchSemiBold" FontSize="18" TextColor="{Binding RecordStreakColor}" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- distance / week -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                <Label Text="Distance / week" FontFamily="InterSemiBold" FontSize="13" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                <Label Grid.Column="1" Text="last 12 weeks" FontSize="11" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+            </Grid>
+            <Border Style="{StaticResource Card}" StrokeShape="RoundRectangle 16" Padding="16" HeightRequest="150" Margin="0,0,0,22">
+                <controls:WeekChartView Values="{Binding WeekValues}" HighlightLabel="{Binding WeekHighlight}" />
+            </Border>
+
+            <!-- achievements -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+                <Label Text="Achievements" FontFamily="InterSemiBold" FontSize="13" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                <Label Grid.Column="1" Text="{Binding AchievementCount}" FontFamily="ChakraPetch" FontSize="12" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+            </Grid>
+            <FlexLayout x:Name="BadgeGrid" Wrap="Wrap" BindableLayout.ItemsSource="{Binding Achievements}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AchievementTile">
+                        <Border WidthRequest="78" HeightRequest="82" Margin="0,0,10,10" StrokeShape="RoundRectangle 14"
+                                BackgroundColor="{Binding Background}" Stroke="{Binding BorderColor}" StrokeThickness="1" Opacity="{Binding Opacity}" Padding="0">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnBadgeTapped" />
+                            </Border.GestureRecognizers>
+                            <Grid RowDefinitions="*,Auto,3">
+                                <VerticalStackLayout Grid.RowSpan="2" HorizontalOptions="Center" VerticalOptions="Center" Spacing="3">
+                                    <Label Text="{Binding Icon}" FontFamily="MaterialRounded" FontSize="26" TextColor="{Binding IconColor}" HorizontalTextAlignment="Center" />
+                                    <Label Text="{Binding Short}" FontSize="8" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" LineBreakMode="TailTruncation" MaxLines="2" Padding="3,0" />
+                                </VerticalStackLayout>
+                                <Grid Grid.Row="2" IsVisible="{Binding ShowProgress}" ColumnDefinitions="{Binding ProgressColumns}">
+                                    <BoxView Grid.ColumnSpan="2" Color="{StaticResource BorderDefault}" />
+                                    <BoxView Grid.Column="0" Color="{StaticResource Accent}" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentView>

@@ -10,6 +10,13 @@
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <local:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+            <local:SegBgConverter x:Key="SegBgConverter" />
+            <local:SegBorderConverter x:Key="SegBorderConverter" />
+            <local:SegTextConverter x:Key="SegTextConverter" />
+            <local:AccentTextConverter x:Key="AccentTextConverter" />
+            <local:AutoBorderConverter x:Key="AutoBorderConverter" />
+            <local:UnitSelBgConverter x:Key="UnitSelBgConverter" />
+            <local:UnitSelTextConverter x:Key="UnitSelTextConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

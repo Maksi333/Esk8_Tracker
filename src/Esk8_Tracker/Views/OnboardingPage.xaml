@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Esk8_Tracker.ViewModels"
+             xmlns:controls="clr-namespace:Esk8_Tracker.Controls"
+             x:Class="Esk8_Tracker.Views.OnboardingPage"
+             x:DataType="vm:OnboardingViewModel"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{StaticResource BgBase}">
+    <Grid RowDefinitions="*,Auto">
+        <!-- content -->
+        <VerticalStackLayout Grid.Row="0" HorizontalOptions="Center" VerticalOptions="Center" Spacing="30" Padding="30,36">
+            <Grid WidthRequest="210" HeightRequest="210" HorizontalOptions="Center">
+                <controls:OnboardingIlloView />
+                <Label Text="{Binding IconGlyph}" FontFamily="MaterialRounded" FontSize="44" TextColor="{StaticResource Accent}"
+                       HorizontalOptions="Center" VerticalOptions="Center" />
+            </Grid>
+            <VerticalStackLayout x:Name="TextBlock" Spacing="12" HorizontalOptions="Center">
+                <Label Text="{Binding Title}" FontFamily="SpaceGroteskSemiBold" FontSize="27" CharacterSpacing="-0.6"
+                       LineHeight="1.15" HorizontalTextAlignment="Center" />
+                <Label Text="{Binding Body}" FontSize="15" TextColor="{StaticResource TextTertiary}" LineHeight="1.55"
+                       HorizontalTextAlignment="Center" MaximumWidthRequest="300" HorizontalOptions="Center" />
+            </VerticalStackLayout>
+            <Border IsVisible="{Binding HasNote}" BackgroundColor="{StaticResource SurfaceCard}" Stroke="{StaticResource BorderDefault}"
+                    StrokeThickness="1" StrokeShape="RoundRectangle 14" Padding="15,13" MaximumWidthRequest="308">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="11">
+                    <Label Text="{Binding NoteIcon}" FontFamily="MaterialRounded" FontSize="20" TextColor="{StaticResource Warn}" VerticalOptions="Start" />
+                    <Label Grid.Column="1" Text="{Binding Note}" FontSize="12.5" TextColor="{StaticResource TextSecondary}" LineHeight="1.45" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+
+        <!-- bottom -->
+        <VerticalStackLayout Grid.Row="1" Padding="30,0,30,30" Spacing="16">
+            <HorizontalStackLayout x:Name="Dots" Spacing="7" HorizontalOptions="Center" Margin="0,0,0,4">
+                <BoxView x:Name="Dot0" WidthRequest="26" HeightRequest="7" CornerRadius="4" Color="{StaticResource Go}" />
+                <BoxView x:Name="Dot1" WidthRequest="7" HeightRequest="7" CornerRadius="4" Color="{StaticResource BorderDefault}" />
+                <BoxView x:Name="Dot2" WidthRequest="7" HeightRequest="7" CornerRadius="4" Color="{StaticResource BorderDefault}" />
+                <BoxView x:Name="Dot3" WidthRequest="7" HeightRequest="7" CornerRadius="4" Color="{StaticResource BorderDefault}" />
+            </HorizontalStackLayout>
+            <Border BackgroundColor="{StaticResource Go}" StrokeThickness="0" StrokeShape="RoundRectangle 16" HeightRequest="56">
+                <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding NextCommand}" /></Border.GestureRecognizers>
+                <HorizontalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="8">
+                    <Label Text="{Binding CtaIcon}" FontFamily="MaterialRounded" FontSize="21" TextColor="{StaticResource OnGo}" VerticalOptions="Center" />
+                    <Label Text="{Binding Cta}" FontFamily="SpaceGroteskSemiBold" FontSize="16" TextColor="{StaticResource OnGo}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+            <Label Text="{Binding Skip}" IsVisible="{Binding HasSkip}" FontSize="14" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" Padding="2">
+                <Label.GestureRecognizers><TapGestureRecognizer Command="{Binding SkipCommand}" /></Label.GestureRecognizers>
+            </Label>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

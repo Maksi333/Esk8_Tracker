@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Esk8_Tracker.ViewModels"
+             xmlns:controls="clr-namespace:Esk8_Tracker.Controls"
+             xmlns:icons="clr-namespace:Esk8_Tracker"
+             x:Class="Esk8_Tracker.Views.BoardEditorPage"
+             x:DataType="vm:BoardEditorViewModel"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{StaticResource BgBase}">
+    <Grid RowDefinitions="Auto,*">
+        <!-- header -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Padding="18,16" ColumnSpacing="12">
+            <Label Text="{x:Static icons:MaterialIcons.Close}" FontFamily="MaterialRounded" FontSize="24" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center"
+                   SemanticProperties.Description="Close">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CloseCommand}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Column="1" Text="{Binding Title}" FontFamily="SpaceGroteskSemiBold" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center" />
+            <Label Grid.Column="2" Text="Save" FontFamily="InterSemiBold" FontSize="14" TextColor="{StaticResource Accent}" VerticalOptions="Center">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding SaveCommand}" />
+                </Label.GestureRecognizers>
+            </Label>
+        </Grid>
+        <BoxView Grid.Row="0" Color="{StaticResource BorderHairline}" HeightRequest="1" VerticalOptions="End" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="18" Spacing="0">
+                <!-- name -->
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Margin="0,0,0,20">
+                    <Border WidthRequest="60" HeightRequest="60" StrokeThickness="0" BackgroundColor="{Binding ColorFaint}" StrokeShape="RoundRectangle 16">
+                        <Label Text="{x:Static icons:MaterialIcons.Skateboarding}" FontFamily="MaterialRounded" FontSize="34" TextColor="{Binding Color}"
+                               HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="6">
+                        <Label Text="NAME" Style="{StaticResource TileLabel}" />
+                        <Border BackgroundColor="{StaticResource SurfaceCard}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 11" Padding="13,2">
+                            <Entry Text="{Binding Name}" Placeholder="Board name" FontFamily="SpaceGroteskSemiBold" FontSize="15" />
+                        </Border>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- color -->
+                <Label Text="BOARD COLOR" Style="{StaticResource TileLabel}" Margin="0,0,0,8" />
+                <HorizontalStackLayout Spacing="10" Margin="0,0,0,22" BindableLayout.ItemsSource="{Binding Palette}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Border WidthRequest="40" HeightRequest="40" StrokeThickness="2" StrokeShape="RoundRectangle 11"
+                                    BackgroundColor="{Binding .}">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BoardEditorViewModel}}, Path=SelectColorCommand}" CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+
+                <!-- wheel type -->
+                <Label Text="WHEEL TYPE" Style="{StaticResource TileLabel}" Margin="0,0,0,8" />
+                <VerticalStackLayout Spacing="8" Margin="0,0,0,22">
+                    <Border x:Name="WheelStreet" BackgroundColor="{StaticResource SurfaceCard}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="15,13">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectWheelCommand}" CommandParameter="Street urethane" />
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="11">
+                            <Label Text="{x:Static icons:MaterialIcons.SportsSoccer}" FontFamily="MaterialRounded" FontSize="21" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="Street urethane" FontSize="14" FontFamily="InterMedium" VerticalOptions="Center" />
+                            <Label Grid.Column="2" x:Name="RadioStreet" Text="{x:Static icons:MaterialIcons.RadioButtonChecked}" FontFamily="MaterialRounded" FontSize="20" TextColor="{StaticResource Accent}" VerticalOptions="Center" IsVisible="False" />
+                        </Grid>
+                    </Border>
+                    <Border x:Name="WheelAt" BackgroundColor="{StaticResource SurfaceCard}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="15,13">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectWheelCommand}" CommandParameter="All-terrain pneumatic" />
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="11">
+                            <Label Text="{x:Static icons:MaterialIcons.TripOrigin}" FontFamily="MaterialRounded" FontSize="21" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="All-terrain pneumatic" FontSize="14" FontFamily="InterMedium" VerticalOptions="Center" />
+                            <Label Grid.Column="2" x:Name="RadioAt" Text="{x:Static icons:MaterialIcons.RadioButtonChecked}" FontFamily="MaterialRounded" FontSize="20" TextColor="{StaticResource Accent}" VerticalOptions="Center" IsVisible="False" />
+                        </Grid>
+                    </Border>
+                    <Border x:Name="WheelCustom" BackgroundColor="{StaticResource SurfaceCard}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="15,13">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectWheelCommand}" CommandParameter="Custom" />
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="11">
+                            <Label Text="{x:Static icons:MaterialIcons.Tune}" FontFamily="MaterialRounded" FontSize="21" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Text="Custom" FontSize="14" FontFamily="InterMedium" VerticalOptions="Center" />
+                            <Label Grid.Column="2" x:Name="RadioCustom" Text="{x:Static icons:MaterialIcons.RadioButtonChecked}" FontFamily="MaterialRounded" FontSize="20" TextColor="{StaticResource Accent}" VerticalOptions="Center" IsVisible="False" />
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- battery + top speed -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,0,0,22">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="BATTERY" Style="{StaticResource TileLabel}" />
+                        <Border BackgroundColor="{StaticResource SurfaceCard}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 11" Padding="13,2">
+                            <Entry Text="{Binding BatteryCells}" Placeholder="10S4P" FontFamily="ChakraPetch" FontSize="15" />
+                        </Border>
+                        <Border BackgroundColor="{StaticResource SurfaceCard}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 11" Padding="13,2">
+                            <Entry Text="{Binding BatteryWh}" Placeholder="Wh (optional)" Keyboard="Numeric" FontFamily="ChakraPetch" FontSize="15" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="8">
+                        <Label Text="TOP SPEED · SCALES RAMP" Style="{StaticResource TileLabel}" />
+                        <Border BackgroundColor="{StaticResource SurfaceCard}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 11" Padding="13,2">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Entry Text="{Binding TopSpeed}" Keyboard="Numeric" FontFamily="ChakraPetch" FontSize="15" TextColor="{StaticResource Danger}" />
+                                <Label Grid.Column="1" Text="{Binding SpeedUnit}" FontFamily="ChakraPetch" FontSize="13" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" Margin="0,0,4,0" />
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- ramp preview -->
+                <Border StrokeShape="RoundRectangle 100" HeightRequest="14" Padding="0" StrokeThickness="0" Margin="0,0,0,6">
+                    <controls:RampBarView />
+                </Border>
+                <Label Text="{Binding RampCaption}" FontSize="11" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" Margin="0,0,0,24" />
+
+                <!-- delete -->
+                <Button Text="Delete board" Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}" Style="{StaticResource DangerOutlineButton}" Padding="13" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

@@ -12,11 +12,27 @@ namespace Esk8_Tracker
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
-                .UseSkiaSharp() // required by Mapsui
+                .UseSkiaSharp() // custom-drawn speedometer, route maps, graphs
                 .ConfigureFonts(fonts =>
                 {
-                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                    // Chakra Petch: telemetry numerics (digits retabularized at build prep)
+                    fonts.AddFont("ChakraPetch-Regular.ttf", "ChakraPetch");
+                    fonts.AddFont("ChakraPetch-Medium.ttf", "ChakraPetchMedium");
+                    fonts.AddFont("ChakraPetch-SemiBold.ttf", "ChakraPetchSemiBold");
+                    fonts.AddFont("ChakraPetch-Bold.ttf", "ChakraPetchBold");
+                    // Space Grotesk: display / headings
+                    fonts.AddFont("SpaceGrotesk-Regular.ttf", "SpaceGrotesk");
+                    fonts.AddFont("SpaceGrotesk-Medium.ttf", "SpaceGroteskMedium");
+                    fonts.AddFont("SpaceGrotesk-SemiBold.ttf", "SpaceGroteskSemiBold");
+                    fonts.AddFont("SpaceGrotesk-Bold.ttf", "SpaceGroteskBold");
+                    // Inter: UI body
+                    fonts.AddFont("Inter-Regular.ttf", "Inter");
+                    fonts.AddFont("Inter-Medium.ttf", "InterMedium");
+                    fonts.AddFont("Inter-SemiBold.ttf", "InterSemiBold");
+                    fonts.AddFont("Inter-Bold.ttf", "InterBold");
+                    // Material Symbols Rounded (subset; see MaterialIcons)
+                    fonts.AddFont("MaterialSymbolsRounded-Regular.ttf", "MaterialRounded");
+                    fonts.AddFont("MaterialSymbolsRounded-Filled.ttf", "MaterialRoundedFilled");
                 });
 
             builder.Services.AddSingleton(_ =>
@@ -30,20 +46,30 @@ namespace Esk8_Tracker
             builder.Services.AddSingleton<Services.IRideRecordingController,
                 Services.UnsupportedRideRecordingController>();
 #endif
-            builder.Services.AddSingleton<ViewModels.RideViewModel>();
-            builder.Services.AddTransient<Views.RidePage>();
+            builder.Services.AddSingleton<Services.AppSettings>();
+            builder.Services.AddSingleton<Services.VoiceCueService>();
+            builder.Services.AddSingleton<AutoPauseMonitor>();
 
-            builder.Services.AddTransient<ViewModels.BoardsViewModel>();
-            builder.Services.AddTransient<Views.BoardsPage>();
-
+            // Root chrome + sections (RootPage caches section instances itself)
+            builder.Services.AddTransient<Views.RootPage>();
+            builder.Services.AddSingleton<ViewModels.RideViewModel>(); // owns live ride state
+            builder.Services.AddTransient<Views.RideSection>();
             builder.Services.AddTransient<ViewModels.HistoryViewModel>();
-            builder.Services.AddTransient<Views.HistoryPage>();
+            builder.Services.AddTransient<Views.HistorySection>();
+            builder.Services.AddTransient<ViewModels.GarageViewModel>();
+            builder.Services.AddTransient<Views.GarageSection>();
+            builder.Services.AddTransient<ViewModels.StatsViewModel>();
+            builder.Services.AddTransient<Views.StatsSection>();
+            builder.Services.AddTransient<ViewModels.SettingsViewModel>();
+            builder.Services.AddTransient<Views.SettingsSection>();
 
+            // Pushed pages
             builder.Services.AddTransient<ViewModels.RideDetailViewModel>();
             builder.Services.AddTransient<Views.RideDetailPage>();
-
-            builder.Services.AddTransient<ViewModels.StatsViewModel>();
-            builder.Services.AddTransient<Views.StatsPage>();
+            builder.Services.AddTransient<ViewModels.BoardEditorViewModel>();
+            builder.Services.AddTransient<Views.BoardEditorPage>();
+            builder.Services.AddTransient<ViewModels.OnboardingViewModel>();
+            builder.Services.AddTransient<Views.OnboardingPage>();
 
 #if DEBUG
             builder.Logging.AddDebug();

@@ -24,6 +24,9 @@ public sealed class DatabaseTests : IAsyncLifetime
         File.Delete(_dbPath);
     }
 
+    private Task<Board> AddBoardAsync(string name) =>
+        _db.SaveBoardAsync(new Board { Name = name });
+
     private static TrackPoint Point(int rideId, double lat, double lon, double secondsAfterT0, double speed = 5) =>
         new()
         {
@@ -34,7 +37,7 @@ public sealed class DatabaseTests : IAsyncLifetime
     [Fact]
     public async Task AddBoard_AppearsInActiveBoards()
     {
-        var board = await _db.AddBoardAsync("Meepo V5");
+        var board = await AddBoardAsync("Meepo V5");
         var boards = await _db.GetActiveBoardsAsync();
         Assert.Single(boards);
         Assert.Equal("Meepo V5", boards[0].Name);
@@ -42,29 +45,37 @@ public sealed class DatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ArchivedBoard_LeavesActiveList_ButKeepsName()
+    public async Task ArchivedBoard_LeavesActiveList_ButStaysResolvable()
     {
-        var board = await _db.AddBoardAsync("Old faithful");
+        var board = await AddBoardAsync("Old faithful");
         await _db.ArchiveBoardAsync(board.Id);
 
         Assert.Empty(await _db.GetActiveBoardsAsync());
-        var names = await _db.GetBoardNamesAsync();
-        Assert.Equal("Old faithful", names[board.Id]);
+        var byId = await _db.GetBoardsByIdAsync();
+        Assert.Equal("Old faithful", byId[board.Id].Name);
     }
 
     [Fact]
-    public async Task RenameBoard_ChangesName()
+    public async Task SaveBoard_UpdatesExistingSpecs()
     {
-        var board = await _db.AddBoardAsync("Tpyo");
-        await _db.RenameBoardAsync(board.Id, "Typo");
+        var board = await AddBoardAsync("Tpyo");
+        board.Name = "Typo";
+        board.TopSpeedKmh = 45;
+        board.BatteryWh = 504;
+        board.ColorHex = "#F5C51E";
+        await _db.SaveBoardAsync(board);
+
         var boards = await _db.GetActiveBoardsAsync();
         Assert.Equal("Typo", boards[0].Name);
+        Assert.Equal(45, boards[0].TopSpeedKmh);
+        Assert.Equal(504, boards[0].BatteryWh);
+        Assert.Equal("#F5C51E", boards[0].ColorHex);
     }
 
     [Fact]
     public async Task CreateRide_IsInProgress_AndExcludedFromCompleted()
     {
-        var board = await _db.AddBoardAsync("Board");
+        var board = await AddBoardAsync("Board");
         var rideId = await _db.CreateRideAsync(board.Id, T0);
 
         Assert.True(rideId > 0);
@@ -77,7 +88,7 @@ public sealed class DatabaseTests : IAsyncLifetime
     [Fact]
     public async Task FinalizeRide_ShowsUpInCompleted_NewestFirst()
     {
-        var board = await _db.AddBoardAsync("Board");
+        var board = await AddBoardAsync("Board");
         var first = await _db.CreateRideAsync(board.Id, T0);
         await _db.FinalizeRideAsync(first, 1000, 300, 3.33, 8, T0.AddMinutes(10), false);
         var second = await _db.CreateRideAsync(board.Id, T0.AddHours(2));
@@ -90,9 +101,22 @@ public sealed class DatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task FinalizeRide_CapturesStartCoordinates()
+    {
+        var board = await AddBoardAsync("Board");
+        var rideId = await _db.CreateRideAsync(board.Id, T0);
+        await _db.SavePointsAsync(new[] { Point(rideId, 55.5, 12.5, 0), Point(rideId, 55.5001, 12.5, 2) });
+        await _db.FinalizeRideAsync(rideId, 11, 2, 5.5, 6, T0.AddSeconds(2), false);
+
+        var ride = await _db.GetRideAsync(rideId);
+        Assert.Equal(55.5, ride!.StartLatitude);
+        Assert.Equal(12.5, ride.StartLongitude);
+    }
+
+    [Fact]
     public async Task SavePoints_RoundTripsOrderedByTimestamp()
     {
-        var board = await _db.AddBoardAsync("Board");
+        var board = await AddBoardAsync("Board");
         var rideId = await _db.CreateRideAsync(board.Id, T0);
         await _db.SavePointsAsync(new[] { Point(rideId, 55.0001, 12, 2), Point(rideId, 55, 12, 0) });
 
@@ -103,9 +127,68 @@ public sealed class DatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Recovery_FinalizesUnfinishedRideFromPoints()
+    public async Task UpdateRideMeta_PersistsNameTagsNotes()
     {
-        var board = await _db.AddBoardAsync("Board");
+        var board = await AddBoardAsync("Board");
+        var rideId = await _db.CreateRideAsync(board.Id, T0);
+        await _db.FinalizeRideAsync(rideId, 500, 100, 5, 7, T0.AddMinutes(5), false);
+
+        await _db.UpdateRideMetaAsync(rideId, "Evening commute", "Commute,Night", "smooth roads");
+
+        var ride = await _db.GetRideAsync(rideId);
+        Assert.Equal("Evening commute", ride!.Name);
+        Assert.Equal(new[] { "Commute", "Night" }, ride.TagList);
+        Assert.Equal("smooth roads", ride.Notes);
+    }
+
+    [Fact]
+    public async Task DeleteRide_RemovesRideAndPoints()
+    {
+        var board = await AddBoardAsync("Board");
+        var rideId = await _db.CreateRideAsync(board.Id, T0);
+        await _db.SavePointsAsync(new[] { Point(rideId, 55, 12, 0) });
+        await _db.FinalizeRideAsync(rideId, 500, 100, 5, 7, T0.AddMinutes(5), false);
+
+        await _db.DeleteRideAsync(rideId);
+
+        Assert.Null(await _db.GetRideAsync(rideId));
+        Assert.Empty(await _db.GetTrackPointsAsync(rideId));
+    }
+
+    [Fact]
+    public async Task UnfinishedRide_WithPoints_IsOfferedForRecovery()
+    {
+        var board = await AddBoardAsync("Board");
+        var rideId = await _db.CreateRideAsync(board.Id, T0);
+        await _db.SavePointsAsync(new[]
+        {
+            Point(rideId, 55.0000, 12, 0),
+            Point(rideId, 55.0001, 12, 2),
+        });
+
+        var unfinished = await _db.GetUnfinishedRideAsync();
+
+        Assert.NotNull(unfinished);
+        Assert.Equal(rideId, unfinished!.Id);
+        Assert.Null(unfinished.EndedAt);
+    }
+
+    [Fact]
+    public async Task UnfinishedRide_WithoutPoints_IsDeletedNotOffered()
+    {
+        var board = await AddBoardAsync("Board");
+        var rideId = await _db.CreateRideAsync(board.Id, T0);
+
+        var unfinished = await _db.GetUnfinishedRideAsync();
+
+        Assert.Null(unfinished);
+        Assert.Null(await _db.GetRideAsync(rideId));
+    }
+
+    [Fact]
+    public async Task FinalizeFromPoints_ComputesStatsAndMarksRecovered()
+    {
+        var board = await AddBoardAsync("Board");
         var rideId = await _db.CreateRideAsync(board.Id, T0);
         await _db.SavePointsAsync(new[]
         {
@@ -113,11 +196,11 @@ public sealed class DatabaseTests : IAsyncLifetime
             Point(rideId, 55.0001, 12, 2),
             Point(rideId, 55.0002, 12, 4),
         });
-
-        var recovered = await _db.RecoverUnfinishedRidesAsync();
-
-        Assert.Equal(1, recovered);
         var ride = await _db.GetRideAsync(rideId);
+
+        await _db.FinalizeFromPointsAsync(ride!);
+
+        ride = await _db.GetRideAsync(rideId);
         Assert.NotNull(ride!.EndedAt);
         Assert.Equal(T0.AddSeconds(4), ride.EndedAt!.Value);
         Assert.True(ride.WasRecovered);
@@ -126,27 +209,13 @@ public sealed class DatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Recovery_DeletesEmptyUnfinishedRide()
+    public async Task CompletedRides_AreNotOfferedForRecovery()
     {
-        var board = await _db.AddBoardAsync("Board");
-        var rideId = await _db.CreateRideAsync(board.Id, T0);
-
-        var recovered = await _db.RecoverUnfinishedRidesAsync();
-
-        Assert.Equal(0, recovered);
-        Assert.Null(await _db.GetRideAsync(rideId));
-    }
-
-    [Fact]
-    public async Task Recovery_LeavesCompletedRidesAlone()
-    {
-        var board = await _db.AddBoardAsync("Board");
+        var board = await AddBoardAsync("Board");
         var rideId = await _db.CreateRideAsync(board.Id, T0);
         await _db.FinalizeRideAsync(rideId, 500, 100, 5, 7, T0.AddMinutes(5), false);
 
-        var recovered = await _db.RecoverUnfinishedRidesAsync();
-
-        Assert.Equal(0, recovered);
+        Assert.Null(await _db.GetUnfinishedRideAsync());
         var ride = await _db.GetRideAsync(rideId);
         Assert.False(ride!.WasRecovered);
         Assert.Equal(500, ride.DistanceMeters);

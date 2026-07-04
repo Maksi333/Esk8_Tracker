@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Esk8_Tracker.Views.RootPage"
+             NavigationPage.HasNavigationBar="False">
+    <Grid x:Name="RootGrid" RowDefinitions="*,Auto">
+
+        <!-- Section host: the active tab's view -->
+        <Grid x:Name="SectionHost" Grid.Row="0" />
+
+        <!-- Bottom navigation (design: 5 tabs, accent pill on active, hidden mid-ride) -->
+        <Grid x:Name="NavBar" Grid.Row="1"
+              BackgroundColor="{StaticResource BgBase}"
+              ColumnDefinitions="*,*,*,*,*"
+              Padding="4,5,4,3">
+            <BoxView Color="{StaticResource BorderHairline}" HeightRequest="1"
+                     Grid.ColumnSpan="5" VerticalOptions="Start" Margin="-4,-5,-4,0" />
+        </Grid>
+
+        <!-- Overlay layer: sheets, confirms, toasts (covers nav too) -->
+        <Grid x:Name="OverlayHost" Grid.RowSpan="2" IsVisible="False" InputTransparent="False" />
+
+        <Grid x:Name="ToastHost" Grid.RowSpan="2" IsVisible="False" InputTransparent="True"
+              VerticalOptions="End" Padding="0,0,0,80">
+            <Border x:Name="ToastBorder"
+                    BackgroundColor="{StaticResource SurfaceElevated}"
+                    Stroke="{StaticResource BorderDefault}" StrokeThickness="1"
+                    StrokeShape="RoundRectangle 100" Padding="20,11"
+                    HorizontalOptions="Center" VerticalOptions="End">
+                <HorizontalStackLayout Spacing="9">
+                    <Label x:Name="ToastIcon" Style="{StaticResource Icon}"
+                           FontSize="19" TextColor="{StaticResource Go}" />
+                    <Label x:Name="ToastText" FontFamily="InterMedium" FontSize="13"
+                           TextColor="{StaticResource TextPrimary}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

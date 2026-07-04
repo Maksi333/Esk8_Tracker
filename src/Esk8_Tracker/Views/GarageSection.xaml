@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Esk8_Tracker.ViewModels"
+             xmlns:icons="clr-namespace:Esk8_Tracker"
+             x:Class="Esk8_Tracker.Views.GarageSection"
+             x:DataType="vm:GarageViewModel"
+             BackgroundColor="{StaticResource BgBase}">
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="18,16,18,20" Spacing="0">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+                    <Label Text="Garage" Style="{StaticResource ScreenTitle}" VerticalOptions="Center" />
+                    <Border Grid.Column="1" WidthRequest="42" HeightRequest="42" StrokeThickness="0"
+                            BackgroundColor="{StaticResource Accent}" StrokeShape="RoundRectangle 12">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding AddBoardCommand}" />
+                        </Border.GestureRecognizers>
+                        <Label Text="{x:Static icons:MaterialIcons.Add}" FontFamily="MaterialRounded" FontSize="24"
+                               TextColor="{StaticResource OnAccent}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center"
+                               SemanticProperties.Description="Add a board" />
+                    </Border>
+                </Grid>
+
+                <VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding Boards}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:BoardCard">
+                            <Border BackgroundColor="{StaticResource SurfaceCard}" Stroke="{Binding BorderColor}" StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 18" Padding="0">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:GarageViewModel}}, Path=EditBoardCommand}" CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="4,*">
+                                    <BoxView Color="{Binding Color}" />
+                                    <VerticalStackLayout Grid.Column="1" Padding="16" Spacing="0">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border WidthRequest="44" HeightRequest="44" StrokeThickness="0" BackgroundColor="{Binding ColorFaint}"
+                                                    StrokeShape="RoundRectangle 12" VerticalOptions="Start">
+                                                <Label Text="{x:Static icons:MaterialIcons.Skateboarding}" FontFamily="MaterialRounded" FontSize="26"
+                                                       TextColor="{Binding Color}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            </Border>
+                                            <VerticalStackLayout Grid.Column="1" Margin="11,0,0,0" VerticalOptions="Center" Spacing="2">
+                                                <Label Text="{Binding Name}" FontFamily="SpaceGroteskSemiBold" FontSize="16" />
+                                                <Label Text="{Binding Specs}" FontFamily="ChakraPetch" FontSize="12" TextColor="{StaticResource TextTertiary}" />
+                                            </VerticalStackLayout>
+                                            <Border Grid.Column="2" IsVisible="{Binding IsActive}" StrokeShape="RoundRectangle 100" StrokeThickness="0"
+                                                    BackgroundColor="{StaticResource GoFaint}" Padding="10,4" VerticalOptions="Start">
+                                                <HorizontalStackLayout Spacing="5">
+                                                    <BoxView WidthRequest="7" HeightRequest="7" CornerRadius="4" Color="{StaticResource Go}" VerticalOptions="Center" />
+                                                    <Label Text="Active" FontFamily="InterSemiBold" FontSize="11" TextColor="{StaticResource Go}" />
+                                                </HorizontalStackLayout>
+                                            </Border>
+                                        </Grid>
+                                        <BoxView Color="{StaticResource BorderDefault}" HeightRequest="1" Margin="0,11,0,11" />
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Label VerticalOptions="Center">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="{Binding Odometer}" FontFamily="ChakraPetchSemiBold" FontSize="14" TextColor="{StaticResource TextPrimary}" />
+                                                        <Span Text=" on this board" FontFamily="Inter" FontSize="12" TextColor="{StaticResource TextTertiary}" />
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                            <Border Grid.Column="1" IsVisible="{Binding ShowSetActive}" BackgroundColor="{StaticResource SurfaceElevated}"
+                                                    Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 9" Padding="13,6">
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:GarageViewModel}}, Path=SetActiveCommand}" CommandParameter="{Binding .}" />
+                                                </Border.GestureRecognizers>
+                                                <Label Text="Set active" FontFamily="InterSemiBold" FontSize="12" TextColor="{StaticResource Accent}" />
+                                            </Border>
+                                        </Grid>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- empty state -->
+        <VerticalStackLayout IsVisible="{Binding IsEmpty}" HorizontalOptions="Center" VerticalOptions="Center" Spacing="14" Padding="40,0">
+            <Border WidthRequest="88" HeightRequest="88" Style="{StaticResource CardQuiet}" StrokeShape="RoundRectangle 24" HorizontalOptions="Center">
+                <Label Text="{x:Static icons:MaterialIcons.Garage}" FontFamily="MaterialRounded" FontSize="44" TextColor="{StaticResource TextTertiary}"
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+            </Border>
+            <Label Text="Your garage is empty" FontFamily="SpaceGroteskSemiBold" FontSize="18" HorizontalTextAlignment="Center" />
+            <Label Text="Add your first board — top speed scales your speed colors, battery powers range estimates."
+                   FontSize="13.5" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" MaximumWidthRequest="300" />
+            <Button Text="Add a board" Command="{Binding AddBoardCommand}" Style="{StaticResource AccentButton}" HorizontalOptions="Center" Padding="20,12" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentView>

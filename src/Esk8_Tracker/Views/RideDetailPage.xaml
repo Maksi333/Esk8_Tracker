@@ -2,36 +2,176 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Esk8_Tracker.ViewModels"
+             xmlns:controls="clr-namespace:Esk8_Tracker.Controls"
+             xmlns:icons="clr-namespace:Esk8_Tracker"
              x:Class="Esk8_Tracker.Views.RideDetailPage"
              x:DataType="vm:RideDetailViewModel"
-             Title="Ride">
-    <Grid RowDefinitions="*,Auto">
-        <ContentView x:Name="MapHolder" />
-        <VerticalStackLayout Grid.Row="1" Padding="15,10" Spacing="6">
-            <HorizontalStackLayout Spacing="8">
-                <Label Text="{Binding Title}" FontAttributes="Bold" FontSize="18" />
-                <Label Text="recovered" IsVisible="{Binding WasRecovered}"
-                       TextColor="OrangeRed" FontSize="12" VerticalOptions="Center" />
-            </HorizontalStackLayout>
-            <Label Text="{Binding BoardName}" TextColor="Gray" />
-            <Grid ColumnDefinitions="*,*,*,*">
-                <VerticalStackLayout HorizontalOptions="Center">
-                    <Label Text="{Binding Distance}" FontSize="20" HorizontalOptions="Center" />
-                    <Label Text="km" FontSize="12" HorizontalOptions="Center" />
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{StaticResource BgBase}">
+    <Grid RowDefinitions="Auto,*">
+        <!-- top bar -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Padding="18,14" ColumnSpacing="8">
+            <Label Text="{x:Static icons:MaterialIcons.ArrowBack}" FontFamily="MaterialRounded" FontSize="24" VerticalOptions="Center" SemanticProperties.Description="Back">
+                <Label.GestureRecognizers><TapGestureRecognizer Command="{Binding BackCommand}" /></Label.GestureRecognizers>
+            </Label>
+            <Border Grid.Column="2" Style="{StaticResource IconButtonFrame}" WidthRequest="38" HeightRequest="38">
+                <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding ExportCommand}" /></Border.GestureRecognizers>
+                <Label Text="{x:Static icons:MaterialIcons.IosShare}" FontFamily="MaterialRounded" FontSize="19" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+            </Border>
+            <Border Grid.Column="3" Style="{StaticResource IconButtonFrame}" WidthRequest="38" HeightRequest="38">
+                <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding MoreCommand}" /></Border.GestureRecognizers>
+                <Label Text="{x:Static icons:MaterialIcons.MoreVert}" FontFamily="MaterialRounded" FontSize="19" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+            </Border>
+        </Grid>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="18,0,18,24" Spacing="0">
+                <Label Text="{Binding Name}" FontFamily="SpaceGroteskSemiBold" FontSize="22" Margin="0,0,0,2" />
+                <Label Text="{Binding Meta}" FontSize="12.5" TextColor="{StaticResource TextTertiary}" Margin="0,0,0,14" />
+
+                <!-- scrub header -->
+                <Border IsVisible="{Binding HasRoute}" BackgroundColor="{StaticResource BgRaised}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 14" Padding="0,12" Margin="0,0,0,12">
+                    <Grid ColumnDefinitions="*,*,*,*">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label Text="{Binding ScrubSpeed}" FontFamily="ChakraPetchSemiBold" FontSize="20" TextColor="{Binding ScrubSpeedColor}" HorizontalTextAlignment="Center" />
+                            <Label Text="{Binding SpeedUnit}" FontSize="10" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                            <Label Text="{Binding ScrubDistance}" FontFamily="ChakraPetchSemiBold" FontSize="20" HorizontalTextAlignment="Center" />
+                            <Label Text="{Binding DistanceUnit}" FontSize="10" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                            <Label Text="{Binding ScrubElevation}" FontFamily="ChakraPetchSemiBold" FontSize="20" HorizontalTextAlignment="Center" />
+                            <Label Text="elev" FontSize="10" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center">
+                            <Label Text="{Binding ScrubTime}" FontFamily="ChakraPetchSemiBold" FontSize="20" HorizontalTextAlignment="Center" />
+                            <Label Text="time" FontSize="10" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- route + scrubber -->
+                <Border IsVisible="{Binding HasRoute}" StrokeShape="RoundRectangle 16" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" HeightRequest="230" Padding="0">
+                    <controls:RouteFieldView Samples="{Binding Samples}" TopSpeedMps="{Binding TopSpeedMps}" UptoFraction="{Binding RouteUptoFraction}" />
+                </Border>
+                <VerticalStackLayout IsVisible="{Binding HasRoute}" Margin="0,14,0,18">
+                    <Slider Minimum="0" Maximum="100" Value="{Binding Scrub}" />
+                    <Label Text="Drag to scrub the route" FontSize="11" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
-                <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
-                    <Label Text="{Binding Duration}" FontSize="20" HorizontalOptions="Center" />
-                    <Label Text="moving" FontSize="12" HorizontalOptions="Center" />
+
+                <Border IsVisible="{Binding HasRoute, Converter={StaticResource InvertedBoolConverter}}" Style="{StaticResource CardQuiet}" HeightRequest="100" StrokeShape="RoundRectangle 16" Margin="0,0,0,16">
+                    <Label Text="No route recorded for this ride" FontSize="13" TextColor="{StaticResource TextTertiary}" HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+
+                <!-- stat grid 3x2 -->
+                <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10" Margin="0,0,0,18">
+                    <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="12,11">
+                        <VerticalStackLayout Spacing="5">
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="{x:Static icons:MaterialIcons.Straighten}" FontFamily="MaterialRounded" FontSize="14" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                                <Label Text="distance" FontSize="10" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding StatDistance}" FontFamily="ChakraPetchSemiBold" FontSize="21" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="12,11">
+                        <VerticalStackLayout Spacing="5">
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="{x:Static icons:MaterialIcons.Bolt}" FontFamily="MaterialRounded" FontSize="14" TextColor="{StaticResource Danger}" VerticalOptions="Center" />
+                                <Label Text="top" FontSize="10" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding StatTop}" FontFamily="ChakraPetchSemiBold" FontSize="21" TextColor="{Binding StatTopColor}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="12,11">
+                        <VerticalStackLayout Spacing="5">
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="{x:Static icons:MaterialIcons.Timer}" FontFamily="MaterialRounded" FontSize="14" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                                <Label Text="moving" FontSize="10" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding StatMoving}" FontFamily="ChakraPetchSemiBold" FontSize="21" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="12,11">
+                        <VerticalStackLayout Spacing="5">
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="{x:Static icons:MaterialIcons.Speed}" FontFamily="MaterialRounded" FontSize="14" TextColor="{StaticResource Accent}" VerticalOptions="Center" />
+                                <Label Text="avg" FontSize="10" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding StatAvg}" FontFamily="ChakraPetchSemiBold" FontSize="21" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="12,11">
+                        <VerticalStackLayout Spacing="5">
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="{x:Static icons:MaterialIcons.Terrain}" FontFamily="MaterialRounded" FontSize="14" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                                <Label Text="gain" FontSize="10" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding StatGain}" FontFamily="ChakraPetchSemiBold" FontSize="21" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}" StrokeShape="RoundRectangle 13" Padding="12,11">
+                        <VerticalStackLayout Spacing="5">
+                            <HorizontalStackLayout Spacing="5">
+                                <Label Text="{x:Static icons:MaterialIcons.Schedule}" FontFamily="MaterialRounded" FontSize="14" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                                <Label Text="total" FontSize="10" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding StatTotal}" FontFamily="ChakraPetchSemiBold" FontSize="21" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- speed graph -->
+                <HorizontalStackLayout IsVisible="{Binding HasRoute}" Spacing="7" Margin="0,0,0,8">
+                    <Label Text="{x:Static icons:MaterialIcons.ShowChart}" FontFamily="MaterialRounded" FontSize="16" TextColor="{StaticResource Accent}" VerticalOptions="Center" />
+                    <Label Text="Speed" FontFamily="InterSemiBold" FontSize="12" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                <Border IsVisible="{Binding HasRoute}" Style="{StaticResource CardInset}" HeightRequest="120" StrokeShape="RoundRectangle 14" Padding="8" Margin="0,0,0,16">
+                    <controls:SpeedGraphView Samples="{Binding Samples}" TopSpeedMps="{Binding TopSpeedMps}" ScrubDistanceMeters="{Binding ScrubGraphDistance}" ScrubSpeedMps="{Binding ScrubGraphSpeed}" />
+                </Border>
+
+                <!-- elevation graph -->
+                <HorizontalStackLayout IsVisible="{Binding HasElevation}" Spacing="7" Margin="0,0,0,8">
+                    <Label Text="{x:Static icons:MaterialIcons.Terrain}" FontFamily="MaterialRounded" FontSize="16" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                    <Label Text="Elevation" FontFamily="InterSemiBold" FontSize="12" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+                <Border IsVisible="{Binding HasElevation}" Style="{StaticResource CardInset}" HeightRequest="80" StrokeShape="RoundRectangle 14" Padding="8" Margin="0,0,0,18">
+                    <controls:ElevationGraphView Samples="{Binding Samples}" />
+                </Border>
+
+                <!-- splits -->
+                <VerticalStackLayout IsVisible="{Binding HasSplits}" Spacing="0">
+                    <Label Text="{Binding SplitUnitLabel}" FontFamily="InterSemiBold" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,0,0,6" />
+                    <Grid ColumnDefinitions="26,*,52,52" Padding="0,0,0,4">
+                        <Label Text="#" FontSize="10" TextColor="{StaticResource TextTertiary}" />
+                        <Label Grid.Column="2" Text="avg" FontSize="10" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="3" Text="top" FontSize="10" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="End" />
+                    </Grid>
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Splits}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SplitRow">
+                                <Grid ColumnDefinitions="26,*,52,52" ColumnSpacing="12" Padding="0,9">
+                                    <Label Text="{Binding Index}" FontFamily="ChakraPetch" FontSize="13" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                                    <Grid Grid.Column="1" VerticalOptions="Center" HeightRequest="6">
+                                        <BoxView Color="{StaticResource BorderHairline}" CornerRadius="3" />
+                                        <Grid ColumnDefinitions="{Binding BarColumns}">
+                                            <BoxView Grid.Column="0" Color="{Binding FillColor}" CornerRadius="3" />
+                                        </Grid>
+                                    </Grid>
+                                    <Label Grid.Column="2" Text="{Binding Avg}" FontFamily="ChakraPetch" FontSize="13" HorizontalTextAlignment="End" VerticalOptions="Center" />
+                                    <Label Grid.Column="3" Text="{Binding Top}" FontFamily="ChakraPetch" FontSize="13" TextColor="{Binding TopColor}" HorizontalTextAlignment="End" VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
                 </VerticalStackLayout>
-                <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
-                    <Label Text="{Binding AvgSpeed}" FontSize="20" HorizontalOptions="Center" />
-                    <Label Text="avg km/h" FontSize="12" HorizontalOptions="Center" />
-                </VerticalStackLayout>
-                <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center">
-                    <Label Text="{Binding MaxSpeed}" FontSize="20" HorizontalOptions="Center" />
-                    <Label Text="max km/h" FontSize="12" HorizontalOptions="Center" />
-                </VerticalStackLayout>
-            </Grid>
-        </VerticalStackLayout>
+
+                <!-- notes -->
+                <Border IsVisible="{Binding HasNotes}" Style="{StaticResource CardQuiet}" StrokeShape="RoundRectangle 12" Padding="14" Margin="0,12,0,0">
+                    <Label Text="{Binding Notes}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 </ContentPage>

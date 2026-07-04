@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Esk8_Tracker.ViewModels"
+             xmlns:controls="clr-namespace:Esk8_Tracker.Controls"
+             xmlns:icons="clr-namespace:Esk8_Tracker"
+             x:Class="Esk8_Tracker.Views.HistorySection"
+             x:DataType="vm:HistoryViewModel"
+             BackgroundColor="{StaticResource BgBase}">
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Padding="18,16,18,0" RowSpacing="0" IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBoolConverter}}">
+            <!-- header -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,14">
+                <Label Text="History" Style="{StaticResource ScreenTitle}" VerticalOptions="Center" />
+                <Border Grid.Column="1" Style="{StaticResource IconButtonFrame}">
+                    <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding ToggleSearchCommand}" /></Border.GestureRecognizers>
+                    <Label Text="{x:Static icons:MaterialIcons.Search}" FontFamily="MaterialRounded" FontSize="20" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource IconButtonFrame}">
+                    <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding OpenFilterCommand}" /></Border.GestureRecognizers>
+                    <Label Text="{x:Static icons:MaterialIcons.FilterList}" FontFamily="MaterialRounded" FontSize="20" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                </Border>
+            </Grid>
+
+            <!-- search entry -->
+            <Border Grid.Row="1" IsVisible="{Binding SearchVisible}" Style="{StaticResource Card}" StrokeShape="RoundRectangle 12" Padding="13,2" Margin="0,0,0,12">
+                <Entry Text="{Binding SearchText}" Placeholder="Search rides by name" FontSize="14" />
+            </Border>
+
+            <!-- period segmented -->
+            <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" ColumnSpacing="8" Margin="0,0,0,14">
+                <Border BackgroundColor="{Binding WeekActive, Converter={StaticResource SegBgConverter}}" Stroke="{Binding WeekActive, Converter={StaticResource SegBorderConverter}}" StrokeThickness="1" StrokeShape="RoundRectangle 10" Padding="0,8">
+                    <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectWeekCommand}" /></Border.GestureRecognizers>
+                    <Label Text="Week" FontFamily="InterSemiBold" FontSize="12.5" HorizontalTextAlignment="Center" TextColor="{Binding WeekActive, Converter={StaticResource SegTextConverter}}" />
+                </Border>
+                <Border Grid.Column="1" BackgroundColor="{Binding MonthActive, Converter={StaticResource SegBgConverter}}" Stroke="{Binding MonthActive, Converter={StaticResource SegBorderConverter}}" StrokeThickness="1" StrokeShape="RoundRectangle 10" Padding="0,8">
+                    <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectMonthCommand}" /></Border.GestureRecognizers>
+                    <Label Text="Month" FontFamily="InterSemiBold" FontSize="12.5" HorizontalTextAlignment="Center" TextColor="{Binding MonthActive, Converter={StaticResource SegTextConverter}}" />
+                </Border>
+                <Border Grid.Column="2" BackgroundColor="{Binding YearActive, Converter={StaticResource SegBgConverter}}" Stroke="{Binding YearActive, Converter={StaticResource SegBorderConverter}}" StrokeThickness="1" StrokeShape="RoundRectangle 10" Padding="0,8">
+                    <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectYearCommand}" /></Border.GestureRecognizers>
+                    <Label Text="Year" FontFamily="InterSemiBold" FontSize="12.5" HorizontalTextAlignment="Center" TextColor="{Binding YearActive, Converter={StaticResource SegTextConverter}}" />
+                </Border>
+                <Border Grid.Column="3" BackgroundColor="{Binding AllActive, Converter={StaticResource SegBgConverter}}" Stroke="{Binding AllActive, Converter={StaticResource SegBorderConverter}}" StrokeThickness="1" StrokeShape="RoundRectangle 10" Padding="0,8">
+                    <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectAllCommand}" /></Border.GestureRecognizers>
+                    <Label Text="All" FontFamily="InterSemiBold" FontSize="12.5" HorizontalTextAlignment="Center" TextColor="{Binding AllActive, Converter={StaticResource SegTextConverter}}" />
+                </Border>
+            </Grid>
+
+            <!-- aggregate + list -->
+            <ScrollView Grid.Row="4">
+                <VerticalStackLayout Spacing="10" Padding="0,0,0,20">
+                    <Border Style="{StaticResource Card}" Padding="16,14">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout VerticalOptions="Center" Spacing="3">
+                                <Label Text="{Binding AggregateLabel}" Style="{StaticResource SectionLabel}" />
+                                <Label Text="{Binding AggregateValue}" FontFamily="ChakraPetch" FontSize="22" />
+                            </VerticalStackLayout>
+                            <controls:SparkBarsView Grid.Column="1" WidthRequest="96" HeightRequest="40" BarCount="22"
+                                                    Samples="{Binding AggregateSpark}" TopSpeedMps="{Binding AggregateSparkTop}" VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+
+                    <VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding Rides}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RideListItem">
+                                <Border Style="{StaticResource Card}" StrokeShape="RoundRectangle 16" Padding="12">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HistoryViewModel}}, Path=OpenRideCommand}" CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13">
+                                        <Border WidthRequest="66" HeightRequest="52" StrokeThickness="0" BackgroundColor="{StaticResource BgRaised}" StrokeShape="RoundRectangle 10" Padding="0">
+                                            <controls:RouteFieldView Samples="{Binding Samples}" TopSpeedMps="{Binding Top}"
+                                                                     ShowGlow="False" ShowBackground="False" RoutePadding="9" RouteStrokeWidth="2.6" />
+                                        </Border>
+                                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="3">
+                                            <Label Text="{Binding Name}" FontFamily="InterSemiBold" FontSize="14" LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding Stat}" Style="{StaticResource NumericCaption}" />
+                                            <HorizontalStackLayout Spacing="5">
+                                                <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="2" Color="{Binding BoardColor}" VerticalOptions="Center" />
+                                                <Label Text="{Binding BoardName}" FontSize="11" TextColor="{StaticResource TextTertiary}" VerticalOptions="Center" />
+                                                <Label Text="recovered" FontSize="10" TextColor="{StaticResource Warn}" IsVisible="{Binding WasRecovered}" VerticalOptions="Center" />
+                                            </HorizontalStackLayout>
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="2" Text="{Binding Date}" FontSize="12" FontFamily="InterMedium" TextColor="{StaticResource TextTertiary}" VerticalOptions="Start" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+
+        <!-- empty state -->
+        <VerticalStackLayout IsVisible="{Binding IsEmpty}" HorizontalOptions="Center" VerticalOptions="Center" Spacing="14" Padding="40,0">
+            <Border WidthRequest="88" HeightRequest="88" Style="{StaticResource CardQuiet}" StrokeShape="RoundRectangle 24" HorizontalOptions="Center">
+                <Label Text="{x:Static icons:MaterialIcons.Route}" FontFamily="MaterialRounded" FontSize="44" TextColor="{StaticResource TextTertiary}"
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+            </Border>
+            <Label Text="No rides yet" FontFamily="SpaceGroteskSemiBold" FontSize="18" HorizontalTextAlignment="Center" />
+            <Label Text="Hit START RIDE and your history builds itself." FontSize="13.5" TextColor="{StaticResource TextTertiary}" HorizontalTextAlignment="Center" MaximumWidthRequest="300" />
+            <Button Text="Go ride" Command="{Binding GoRideCommand}" Style="{StaticResource AccentButton}" HorizontalOptions="Center" Padding="20,12" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentView>
