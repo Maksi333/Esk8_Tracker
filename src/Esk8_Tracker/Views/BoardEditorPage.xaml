@@ -46,11 +46,11 @@
                 <Label Text="BOARD COLOR" Style="{StaticResource TileLabel}" Margin="0,0,0,8" />
                 <HorizontalStackLayout Spacing="10" Margin="0,0,0,22" BindableLayout.ItemsSource="{Binding Palette}">
                     <BindableLayout.ItemTemplate>
-                        <DataTemplate x:DataType="x:String">
+                        <DataTemplate x:DataType="vm:PaletteSwatch">
                             <Border WidthRequest="40" HeightRequest="40" StrokeThickness="2" StrokeShape="RoundRectangle 11"
-                                    BackgroundColor="{Binding .}">
+                                    BackgroundColor="{Binding Swatch}" Stroke="{Binding BorderColor}">
                                 <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BoardEditorViewModel}}, Path=SelectColorCommand}" CommandParameter="{Binding .}" />
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource Mode=FindAncestorBindingContext, AncestorType={x:Type vm:BoardEditorViewModel}}, Path=SelectColorCommand}" CommandParameter="{Binding .}" />
                                 </Border.GestureRecognizers>
                             </Border>
                         </DataTemplate>

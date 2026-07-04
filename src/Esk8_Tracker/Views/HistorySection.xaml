@@ -66,7 +66,7 @@
                             <DataTemplate x:DataType="vm:RideListItem">
                                 <Border Style="{StaticResource Card}" StrokeShape="RoundRectangle 16" Padding="12">
                                     <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HistoryViewModel}}, Path=OpenRideCommand}" CommandParameter="{Binding .}" />
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource Mode=FindAncestorBindingContext, AncestorType={x:Type vm:HistoryViewModel}}, Path=OpenRideCommand}" CommandParameter="{Binding .}" />
                                     </Border.GestureRecognizers>
                                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="13">
                                         <Border WidthRequest="66" HeightRequest="52" StrokeThickness="0" BackgroundColor="{StaticResource BgRaised}" StrokeShape="RoundRectangle 10" Padding="0">

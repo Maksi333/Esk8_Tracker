@@ -367,11 +367,14 @@ public partial class RideViewModel : ObservableObject
         if (MapPeek) OnPropertyChanged(nameof(LiveSamplesSnapshot));
     }
 
+    private bool _stoppingToSummary;
+
     public async Task StopFromHoldAsync()
     {
         var rideId = _recorder.ActiveRideId;
         try
         {
+            _stoppingToSummary = true; // suppress the idle handler; we're going to Summary
             _controller.StopLocationService();
             await _recorder.StopAsync(DateTime.UtcNow);
             StopTimer();
@@ -384,6 +387,10 @@ public partial class RideViewModel : ObservableObject
         {
             await Toast("Couldn't stop the ride — try again", MaterialIcons.Warning);
             System.Diagnostics.Debug.WriteLine(ex);
+        }
+        finally
+        {
+            _stoppingToSummary = false;
         }
     }
 
@@ -622,7 +629,7 @@ public partial class RideViewModel : ObservableObject
                 UiState = RideUiState.Paused;
                 RecomputeLiveDisplays();
                 break;
-            case RecorderState.Idle when IsActive || IsPaused:
+            case RecorderState.Idle when (IsActive || IsPaused) && !_stoppingToSummary:
                 // The ride ended outside the app (notification "Stop & save").
                 StopTimer();
                 GlanceMode = false; MapPeek = false;

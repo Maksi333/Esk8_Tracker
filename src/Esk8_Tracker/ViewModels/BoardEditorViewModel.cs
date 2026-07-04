@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -38,7 +39,9 @@ public partial class BoardEditorViewModel : ObservableObject
     [ObservableProperty] private double _topSpeedMps = 40 / 3.6;
     [ObservableProperty] private bool _canDelete;
 
-    public string[] Palette => Board.Colors;
+    public ObservableCollection<PaletteSwatch> Palette { get; } =
+        new(Board.Colors.Select(h => new PaletteSwatch(h)));
+
     public event Action? RequestClose;
 
     public void StartNew()
@@ -74,6 +77,8 @@ public partial class BoardEditorViewModel : ObservableObject
         ColorHex = hex;
         Color = SafeColor(hex);
         ColorFaint = Color.WithAlpha(0.16f);
+        foreach (var s in Palette)
+            s.IsSelected = string.Equals(s.Hex, hex, StringComparison.OrdinalIgnoreCase);
     }
 
     private void SetTopFromKmh(double kmh)
@@ -84,7 +89,10 @@ public partial class BoardEditorViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectColor(string hex) => SetColor(hex);
+    private void SelectColor(PaletteSwatch? swatch)
+    {
+        if (swatch is not null) SetColor(swatch.Hex);
+    }
 
     [RelayCommand]
     private void SelectWheel(string wheel) => WheelType = wheel;
@@ -159,6 +167,24 @@ public partial class BoardEditorViewModel : ObservableObject
         try { return Color.FromArgb(string.IsNullOrWhiteSpace(hex) ? "#4C8DFF" : hex); }
         catch { return Color.FromArgb("#4C8DFF"); }
     }
+}
+
+public partial class PaletteSwatch : ObservableObject
+{
+    public PaletteSwatch(string hex)
+    {
+        Hex = hex;
+        try { Swatch = Color.FromArgb(hex); } catch { Swatch = Color.FromArgb("#4C8DFF"); }
+    }
+
+    public string Hex { get; }
+    public Color Swatch { get; }
+
+    [ObservableProperty] private bool _isSelected;
+
+    public Color BorderColor => IsSelected ? Color.FromArgb("#F2F5F7") : Colors.Transparent;
+
+    partial void OnIsSelectedChanged(bool value) => OnPropertyChanged(nameof(BorderColor));
 }
 
 /// <summary>Small convenience so the editor can fetch-or-create without a null dance.</summary>
