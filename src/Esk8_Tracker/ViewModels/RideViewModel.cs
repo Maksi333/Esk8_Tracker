@@ -342,6 +342,7 @@ public partial class RideViewModel : ObservableObject
     [RelayCommand]
     private void Pause()
     {
+        MarkInteraction();
         _autoPause.Reset();
         PauseReason = "manual";
         _recorder.Pause();
@@ -350,22 +351,36 @@ public partial class RideViewModel : ObservableObject
     [RelayCommand]
     private void Resume()
     {
+        MarkInteraction();
         _autoPause.Reset();
         _recorder.Resume();
     }
 
     [RelayCommand]
-    private void ToggleGlance() => GlanceMode = !GlanceMode;
+    private void ToggleGlance()
+    {
+        MarkInteraction();
+        GlanceMode = !GlanceMode;
+    }
 
     [RelayCommand]
-    private void ExitGlance() => GlanceMode = false;
+    private void ExitGlance()
+    {
+        MarkInteraction();
+        GlanceMode = false;
+    }
 
     [RelayCommand]
     private void ToggleMapPeek()
     {
+        MarkInteraction();
         MapPeek = !MapPeek;
         if (MapPeek) OnPropertyChanged(nameof(LiveSamplesSnapshot));
     }
+
+    /// <summary>Resets the auto-glance idle countdown; call on any live-screen interaction.</summary>
+    [RelayCommand]
+    public void MarkInteraction() => _lastInteractionUtc = DateTime.UtcNow;
 
     private bool _stoppingToSummary;
 
@@ -693,10 +708,13 @@ public partial class RideViewModel : ObservableObject
     }
 
     private double? _activeBatteryWh;
+    private DateTime _lastInteractionUtc;
+    public const double AutoGlanceIdleSeconds = 30;
 
     private void StartTimer()
     {
         _activeBatteryWh = null;
+        _lastInteractionUtc = DateTime.UtcNow;
         _ = LoadActiveBatteryAsync();
         if (_timer is not null) return;
         _timer = Application.Current!.Dispatcher.CreateTimer();
@@ -707,6 +725,13 @@ public partial class RideViewModel : ObservableObject
             var lost = _recorder.IsSignalLost(DateTime.UtcNow);
             if (lost != GpsLost) { GpsLost = lost; RecomputeLiveDisplays(); }
             if (IsActive && TileFourthLabel == "TOTAL") RecomputeLiveDisplays();
+
+            // Auto glance-mode: dim to speed-only after a spell without interaction.
+            if (IsActive && !GlanceMode && _settings.AutoGlance &&
+                (DateTime.UtcNow - _lastInteractionUtc).TotalSeconds >= AutoGlanceIdleSeconds)
+            {
+                GlanceMode = true;
+            }
         };
         _timer.Start();
     }

@@ -127,6 +127,9 @@
 
         <!-- ══════════ ACTIVE ══════════ -->
         <Grid IsVisible="{Binding IsActive}" Padding="18,14,18,18" RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" RowSpacing="0">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding MarkInteractionCommand}" />
+            </Grid.GestureRecognizers>
 
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
                 <Grid.GestureRecognizers>
