@@ -152,12 +152,21 @@ public partial class RideViewModel : ObservableObject
     }
 
     // ── lifecycle ──
+    // async void: an exception here would otherwise be unhandled and crash the app,
+    // so failures are logged and swallowed — a data-load hiccup must not kill the UI.
     public async void OnShown()
     {
-        VoiceCuesOn = _settings.VoiceCues;
-        _autoPause.Sensitivity = _settings.AutoPause;
-        if (IsIdle)
-            await RefreshIdleAsync();
+        try
+        {
+            VoiceCuesOn = _settings.VoiceCues;
+            _autoPause.Sensitivity = _settings.AutoPause;
+            if (IsIdle)
+                await RefreshIdleAsync();
+        }
+        catch (Exception ex)
+        {
+            Services.CrashLog.Write("RideViewModel.OnShown", ex);
+        }
     }
 
     private async Task RefreshIdleAsync()

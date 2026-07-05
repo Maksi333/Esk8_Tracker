@@ -62,7 +62,11 @@ public partial class StatsViewModel : ObservableObject
 
     public ObservableCollection<AchievementTile> Achievements { get; } = new();
 
-    public async void OnShown() => await LoadAsync();
+    public async void OnShown()
+    {
+        try { await LoadAsync(); }
+        catch (Exception ex) { Services.CrashLog.Write("StatsViewModel.OnShown", ex); }
+    }
 
     private async Task LoadAsync()
     {

@@ -44,7 +44,11 @@ public partial class HistoryViewModel : ObservableObject
     public bool YearActive => Period == HistoryPeriod.Year;
     public bool AllActive => Period == HistoryPeriod.All;
 
-    public async void OnShown() => await LoadAsync();
+    public async void OnShown()
+    {
+        try { await LoadAsync(); }
+        catch (Exception ex) { Services.CrashLog.Write("HistoryViewModel.OnShown", ex); }
+    }
 
     partial void OnPeriodChanged(HistoryPeriod value)
     {

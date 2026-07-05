@@ -219,7 +219,7 @@
 
             <!-- controls -->
             <Grid Grid.Row="4" ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,0,0,12">
-                <Border Style="{StaticResource ElevatedButton}" HeightRequest="60" BackgroundColor="{StaticResource SurfaceElevated}"
+                <Border HeightRequest="60" BackgroundColor="{StaticResource SurfaceElevated}"
                         Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 16" Padding="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding PauseCommand}" />
@@ -229,7 +229,7 @@
                         <Label Text="PAUSE" FontFamily="SpaceGroteskSemiBold" FontSize="16" VerticalOptions="Center" />
                     </HorizontalStackLayout>
                 </Border>
-                <Border Grid.Column="1" Style="{StaticResource ElevatedButton}" WidthRequest="88" HeightRequest="60"
+                <Border Grid.Column="1" WidthRequest="88" HeightRequest="60"
                         BackgroundColor="{StaticResource SurfaceElevated}" Stroke="{StaticResource BorderDefault}" StrokeThickness="1" StrokeShape="RoundRectangle 16" Padding="0">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ToggleMapPeekCommand}" />
@@ -243,8 +243,6 @@
 
             <controls:HoldToStopBar x:Name="ActiveHoldBar" Grid.Row="5" />
         </Grid>
-
-        <!-- Fix the PAUSE button label to use icon glyph -->
 
         <!-- ══════════ PAUSED ══════════ -->
         <Grid IsVisible="{Binding IsPaused}" Padding="18,14,18,18" RowDefinitions="*,Auto,Auto">

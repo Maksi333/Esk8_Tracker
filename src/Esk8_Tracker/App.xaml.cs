@@ -37,9 +37,13 @@ namespace Esk8_Tracker
         /// <summary>Called by onboarding when it completes; swaps in the main chrome.</summary>
         public void ShowMainApp()
         {
+            // Build the chrome BEFORE persisting OnboardingDone: if construction throws,
+            // the flag stays false so a relaunch returns to onboarding instead of
+            // re-entering a broken main screen on every launch.
+            var root = new NavigationPage(_services.GetRequiredService<RootPage>());
             _settings.OnboardingDone = true;
             if (Windows.Count > 0)
-                Windows[0].Page = new NavigationPage(_services.GetRequiredService<RootPage>());
+                Windows[0].Page = root;
         }
     }
 }

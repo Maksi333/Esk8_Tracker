@@ -28,7 +28,11 @@ public partial class GarageViewModel : ObservableObject
 
     [ObservableProperty] private bool _isEmpty;
 
-    public async void OnShown() => await LoadAsync();
+    public async void OnShown()
+    {
+        try { await LoadAsync(); }
+        catch (Exception ex) { Services.CrashLog.Write("GarageViewModel.OnShown", ex); }
+    }
 
     private void OnBoardsChanged() => MainThread.BeginInvokeOnMainThread(() => _ = LoadAsync());
 

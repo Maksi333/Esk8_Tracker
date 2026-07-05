@@ -9,6 +9,8 @@ namespace Esk8_Tracker
     {
         public static MauiApp CreateMauiApp()
         {
+            Services.CrashLog.Install();
+
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()

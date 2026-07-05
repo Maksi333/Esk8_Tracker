@@ -34,20 +34,27 @@ public partial class SettingsViewModel : ObservableObject
 
     public async void OnShown()
     {
-        Metric = _settings.Units == UnitSystem.Metric;
-        Imperial = !Metric;
-        AutoOff = _settings.AutoPause == AutoPauseSensitivity.Off;
-        AutoLow = _settings.AutoPause == AutoPauseSensitivity.Low;
-        AutoNormal = _settings.AutoPause == AutoPauseSensitivity.Normal;
-        AutoHigh = _settings.AutoPause == AutoPauseSensitivity.High;
-        VoiceCues = _settings.VoiceCues;
-        AutoGlance = _settings.AutoGlance;
-        ColorizeMap = _settings.ColorizeMap;
-        Version = $"ESK8 Tracker · v{AppInfo.Current.VersionString}";
+        try
+        {
+            Metric = _settings.Units == UnitSystem.Metric;
+            Imperial = !Metric;
+            AutoOff = _settings.AutoPause == AutoPauseSensitivity.Off;
+            AutoLow = _settings.AutoPause == AutoPauseSensitivity.Low;
+            AutoNormal = _settings.AutoPause == AutoPauseSensitivity.Normal;
+            AutoHigh = _settings.AutoPause == AutoPauseSensitivity.High;
+            VoiceCues = _settings.VoiceCues;
+            AutoGlance = _settings.AutoGlance;
+            ColorizeMap = _settings.ColorizeMap;
+            Version = $"ESK8 Tracker · v{AppInfo.Current.VersionString}";
 
-        var rides = await _db.GetCompletedRidesAsync();
-        var mb = _db.StorageBytes() / 1048576.0;
-        StorageText = $"{rides.Count} rides · {mb:F1} MB on device";
+            var rides = await _db.GetCompletedRidesAsync();
+            var mb = _db.StorageBytes() / 1048576.0;
+            StorageText = $"{rides.Count} rides · {mb:F1} MB on device";
+        }
+        catch (Exception ex)
+        {
+            Services.CrashLog.Write("SettingsViewModel.OnShown", ex);
+        }
     }
 
     [RelayCommand]
