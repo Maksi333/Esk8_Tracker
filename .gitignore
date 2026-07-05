@@ -9,3 +9,12 @@ obj/
 # OS
 Thumbs.db
 .DS_Store
+
+# Signing keys — never commit; keep a private backup for Play Store
+signing/
+*.keystore
+
+# Built APK/AAB output
+dist/
+*.apk
+*.aab
